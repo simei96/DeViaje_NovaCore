@@ -6,85 +6,141 @@ import { SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } fro
 
 // Recuerda: aquí está la pantalla principal de perfil. Cambiar layout general aquí.
 export default function ProfileScreen() {
-  // Recuerda: aquí guardo el email del usuario
+  // Estado de autenticación simulado (FUTURO: conectar con backend)
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [email, setEmail] = useState('');
-  // Recuerda: aquí guardo la contraseña
   const [password, setPassword] = useState('');
-  // Recuerda: aquí controlo si se muestra la contraseña
   const [showPassword, setShowPassword] = useState(false);
-  // Recuerda: navigation para moverme entre pantallas
   const navigation = useNavigation();
 
-  return (
-    <SafeAreaView style={styles.container}>
-      {/* Recuerda: este es el header con el gradiente y el avatar */}
-      <View style={styles.headerBg}>
-        <TouchableOpacity style={styles.backBtn}>
-          <Text style={{ fontSize: 22, color: '#fff' }}>{'<'}</Text>
-        </TouchableOpacity>
-        <View style={styles.avatarCircle}>
-          <MaterialCommunityIcons name="account" size={44} color="#0ba4e0" />
-        </View>
-        <Text style={styles.title}>Nicaragua Tours</Text>
-        <Text style={styles.subtitle}>Bienvenido de vuelta</Text>
-      </View>
-
-      {/* Recuerda: aquí está la card de login. Cambiar campos o estilos aquí. */}
-      <View style={styles.card}>
-        <Text style={styles.loginTitle}>Iniciar Sesión</Text>
-        <Text style={styles.label}>Correo electrónico</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="tu@correo.com"
-          placeholderTextColor="#bbb"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
-        <Text style={styles.label}>Contraseña</Text>
-        <View style={styles.passwordRow}>
-          <TextInput
-            style={[styles.input, { flex: 1 }]}
-            placeholder="Tu contraseña"
-            placeholderTextColor="#bbb"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
-          />
-          <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={styles.eyeBtn}>
-            <MaterialCommunityIcons
-              name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-              size={22}
-              color="#888"
-            />
-          </TouchableOpacity>
-        </View>
-        <TouchableOpacity style={styles.loginBtn}>
-          <Text style={styles.loginBtnText}>Iniciar Sesión</Text>
-        </TouchableOpacity>
-        {/* Recuerda: aquí está el link para ir a registro. Cambiar navegación aquí si es necesario. */}
-        <Text style={styles.registerText}>
-          ¿No tienes cuenta?{' '}
-          <Text
-            style={styles.registerLink}
-            onPress={() => navigation.navigate('register')}
-          >
-            Regístrate aquí
-          </Text>
-        </Text>
-        <View style={styles.businessBox}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-            <MaterialCommunityIcons name="office-building-outline" size={22} color="#1a237e" style={{ marginRight: 6 }} />
-            <View>
-              <Text style={styles.businessTitle}>¿Tienes un negocio turístico?</Text>
-              <Text style={styles.businessSubtitle}>Regístrate como empresa y llega a más turistas</Text>
+  if (!isAuthenticated) {
+    // Pantalla de inicio de sesión como la referencia
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#f6fafd' }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ alignItems: 'center', marginBottom: 18 }}>
+            <View style={{ backgroundColor: '#e3f2fd', borderRadius: 50, width: 64, height: 64, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+              <MaterialCommunityIcons name="account" size={38} color="#283593" />
+            </View>
+            <Text style={{ fontWeight: 'bold', color: '#283593', fontSize: 22, marginBottom: 4 }}>Iniciar Sesión</Text>
+            <Text style={{ color: '#888', fontSize: 15, marginBottom: 10, textAlign: 'center' }}>Inicia sesión o regístrate para continuar</Text>
+          </View>
+          <View style={{ backgroundColor: '#fff', borderRadius: 18, padding: 22, width: '90%', maxWidth: 370, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 }}>
+            <Text style={{ color: '#283593', fontWeight: 'bold', fontSize: 14, marginBottom: 6 }}>Correo electrónico</Text>
+            <TextInput style={{ borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 8, padding: 10, marginBottom: 12, fontSize: 15 }} value={email} onChangeText={setEmail} placeholder="tu@email.com" keyboardType="email-address" />
+            <Text style={{ color: '#283593', fontWeight: 'bold', fontSize: 14, marginBottom: 6 }}>Contraseña</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 8, marginBottom: 12 }}>
+              <TextInput style={{ flex: 1, padding: 10, fontSize: 15 }} value={password} onChangeText={setPassword} placeholder="********" secureTextEntry={!showPassword} />
+              <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={{ padding: 8 }}>
+                <MaterialCommunityIcons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={22} color="#888" />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={{ backgroundColor: '#5c6bc0', borderRadius: 8, paddingVertical: 12, marginBottom: 10 }} onPress={() => setIsAuthenticated(true)}>
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16, textAlign: 'center' }}>Iniciar Sesión</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={{ borderRadius: 8, borderWidth: 1, borderColor: '#e0e0e0', paddingVertical: 10, marginBottom: 10 }} onPress={() => navigation.navigate('register')}>
+              <Text style={{ color: '#283593', fontWeight: 'bold', fontSize: 15, textAlign: 'center' }}>Crear cuenta nueva</Text>
+            </TouchableOpacity>
+            <View style={{ borderWidth: 1, borderColor: '#5c6bc0', borderRadius: 12, padding: 12, marginTop: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                <MaterialCommunityIcons name="office-building-outline" size={22} color="#283593" style={{ marginRight: 8 }} />
+                <Text style={{ fontWeight: 'bold', color: '#283593', fontSize: 15 }}>¿Tienes un negocio turístico?</Text>
+              </View>
+              <Text style={{ color: '#888', fontSize: 13, marginBottom: 8 }}>Regístrate como empresa y llega a más turistas</Text>
+              <TouchableOpacity style={{ borderWidth: 1, borderColor: '#283593', borderRadius: 8, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                <MaterialCommunityIcons name="briefcase-outline" size={18} color="#283593" style={{ marginRight: 6 }} />
+                <Text style={{ color: '#283593', fontWeight: 'bold', fontSize: 15 }}>Registrar Mi Negocio</Text>
+              </TouchableOpacity>
             </View>
           </View>
-          <TouchableOpacity style={styles.businessBtn} disabled>
-            <MaterialCommunityIcons name="store-outline" size={18} color="#1a237e" style={{ marginRight: 12, marginLeft: 2 }} />
-            <Text style={styles.businessBtnTextSmall}>Registrar Mi Negocio</Text>
-            <Text style={styles.soonTextSmall}>Próximamente</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Si está autenticado, muestra perfil detallado
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f6fafd' }}>
+      <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 18, paddingBottom: 8, marginBottom: 8 }}>
+        <Text style={{ fontWeight: 'bold', color: '#283593', fontSize: 18 }}>Mi Perfil</Text>
+        <View style={{ position: 'absolute', right: 24, top: 28, flexDirection: 'row', gap: 18 }}>
+          <TouchableOpacity onPress={() => navigation.navigate('EditProfile')}>
+            <Text style={{ color: '#1976d2', fontWeight: 'bold', fontSize: 13 }}>✎ Editar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => { setIsAuthenticated(false); navigation.navigate('Login'); }}>
+            <Text style={{ color: '#e53935', fontWeight: 'bold', fontSize: 13 }}>✖ Salir</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+      <View style={{ backgroundColor: '#fff', borderRadius: 18, marginHorizontal: 12, marginBottom: 12, padding: 18, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={{ backgroundColor: '#e3f2fd', borderRadius: 32, width: 54, height: 54, alignItems: 'center', justifyContent: 'center' }}>
+            <MaterialCommunityIcons name="account" size={32} color="#1976d2" />
+          </View>
+          <View>
+            <Text style={{ fontWeight: 'bold', fontSize: 16, color: '#222' }}>Carlos Mendoza</Text>
+            <Text style={{ color: '#888', fontSize: 13 }}>carlos.mendoza@email.com</Text>
+          </View>
+        </View>
+        <View style={{ marginTop: 16, gap: 10 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f6fafd', borderRadius: 10, padding: 10 }}>
+            <MaterialCommunityIcons name="calendar" size={20} color="#1976d2" style={{ marginRight: 8 }} />
+            <Text style={{ color: '#444', fontSize: 14 }}>Fecha de registro</Text>
+            <Text style={{ color: '#888', fontSize: 14, marginLeft: 8 }}>23/09/2025</Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f6fafd', borderRadius: 10, padding: 10 }}>
+            <MaterialCommunityIcons name="phone" size={20} color="#1976d2" style={{ marginRight: 8 }} />
+            <Text style={{ color: '#444', fontSize: 14 }}>Teléfono</Text>
+            <Text style={{ color: '#888', fontSize: 14, marginLeft: 8 }}>+505 8765-4321</Text>
+          </View>
+        </View>
+      </View>
+      <View style={{ backgroundColor: '#fff', borderRadius: 18, marginHorizontal: 12, marginBottom: 12, padding: 18, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <Text style={{ fontWeight: 'bold', color: '#222', fontSize: 15 }}>Métodos de Pago</Text>
+          <TouchableOpacity><Text style={{ color: '#1976d2', fontWeight: 'bold', fontSize: 13 }}>+ Agregar</Text></TouchableOpacity>
+        </View>
+        <View style={{ gap: 10 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f6fafd', borderRadius: 10, padding: 10, justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <MaterialCommunityIcons name="credit-card" size={20} color="#1976d2" style={{ marginRight: 8 }} />
+              <Text style={{ color: '#444', fontSize: 14 }}>Visa ****</Text>
+              <Text style={{ color: '#888', fontSize: 14, marginLeft: 8 }}>Termina en 4532</Text>
+            </View>
+            <View style={{ backgroundColor: '#e3f2fd', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 }}>
+              <Text style={{ color: '#1976d2', fontWeight: 'bold', fontSize: 12 }}>Tarjeta</Text>
+            </View>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f6fafd', borderRadius: 10, padding: 10, justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <MaterialCommunityIcons name="bank" size={20} color="#1976d2" style={{ marginRight: 8 }} />
+              <Text style={{ color: '#444', fontSize: 14 }}>Banco BAC</Text>
+              <Text style={{ color: '#888', fontSize: 14, marginLeft: 8 }}>Termina en 7890</Text>
+            </View>
+            <View style={{ backgroundColor: '#e3f2fd', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 }}>
+              <Text style={{ color: '#1976d2', fontWeight: 'bold', fontSize: 12 }}>Banco</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+      <View style={{ backgroundColor: '#fff', borderRadius: 18, marginHorizontal: 12, marginBottom: 18, padding: 18, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+          <Text style={{ fontWeight: 'bold', color: '#222', fontSize: 14 }}>Para Negocios</Text>
+          <MaterialCommunityIcons name="briefcase-outline" size={20} color="#1976d2" />
+        </View>
+        <View style={{ alignItems: 'center', marginVertical: 6 }}>
+          <View style={{ backgroundColor: '#e3f2fd', borderRadius: 24, width: 38, height: 38, alignItems: 'center', justifyContent: 'center', marginBottom: 6 }}>
+            <MaterialCommunityIcons name="office-building-outline" size={22} color="#1976d2" />
+          </View>
+          <Text style={{ fontWeight: 'bold', color: '#222', fontSize: 13, textAlign: 'center' }}>¿Tienes un negocio turístico?</Text>
+          <Text style={{ color: '#888', fontSize: 11, textAlign: 'center', marginBottom: 6 }}>Registra tu negocio en DeViaje! y llega a más turistas</Text>
+          <View style={{ marginBottom: 6 }}>
+            <Text style={{ color: '#1976d2', fontSize: 10 }}>✓ Verificación gratuita</Text>
+            <Text style={{ color: '#1976d2', fontSize: 10 }}>✓ Panel de gestión completo</Text>
+            <Text style={{ color: '#1976d2', fontSize: 10 }}>✓ Mayor visibilidad</Text>
+          </View>
+          <TouchableOpacity style={{ backgroundColor: '#1976d2', borderRadius: 8, paddingVertical: 7, paddingHorizontal: 16 }}>
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>+ Registrar Mi Negocio</Text>
           </TouchableOpacity>
         </View>
       </View>

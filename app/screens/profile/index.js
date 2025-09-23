@@ -10,6 +10,8 @@ export default function ProfileStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="profile-main" component={ProfileScreen} />
       <Stack.Screen name="register" component={RegisterScreen} />
+      <Stack.Screen name="EditProfile" component={require('./editProfile').default} />
+      <Stack.Screen name="Login" component={RegisterScreen} />
     </Stack.Navigator>
   );
 }
