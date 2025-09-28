@@ -12,7 +12,7 @@ const carouselData = [
 	{
 		title: 'Volcán Masaya',
 		desc: 'Naturaleza volcánica espectacular',
-		badge: '🚀 Próximamente',
+		badge: 'Próximamente',
 		btn: 'Descubre Nicaragua',
 		// Recuerda: cuando conectes Firestore, reemplaza image por la url de la base de datos
 		image: null,

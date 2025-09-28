@@ -5,7 +5,6 @@ import Home from '../screens/home/home';
 import MapScreen from '../screens/map/map';
 import ProfileStack from '../screens/profile';
 import ReservationsScreen from '../screens/reservations/reservations';
-// Importa aquí tus otras screens
 
 const Tab = createBottomTabNavigator();
 
@@ -14,8 +13,8 @@ export default function TabLayout() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#FFB300', // Amarillo cálido
-        tabBarInactiveTintColor: '#888', // Gris
+        tabBarActiveTintColor: '#FFB300', 
+        tabBarInactiveTintColor: '#888', 
         tabBarStyle: {
           backgroundColor: '#fff',
           height: 60,
