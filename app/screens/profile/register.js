@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+  fontFamily:'Montserrat-Bold',
     color: '#2196f3',
   },
   form: {
@@ -246,11 +246,11 @@ const styles = StyleSheet.create({
     color: '#222',
     marginTop: 12,
     marginBottom: 4,
-    fontWeight: 'bold',
+  fontFamily:'Montserrat-SemiBold',
   },
   required: {
     color: '#ff6f00',
-    fontWeight: 'bold',
+  fontFamily:'Montserrat-SemiBold',
   },
   input: {
     backgroundColor: '#f5f5f5',
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
   },
   submitBtnText: {
     color: '#fff',
-    fontWeight: 'bold',
+  fontFamily:'Montserrat-SemiBold',
     fontSize: 15,
   },
 });

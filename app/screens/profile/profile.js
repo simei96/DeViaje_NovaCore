@@ -59,13 +59,13 @@ export default function ProfileScreen() {
             <View style={{ backgroundColor: '#e3f2fd', borderRadius: 50, width: 64, height: 64, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
               <MaterialCommunityIcons name="account" size={38} color="#283593" />
             </View>
-            <Text style={{ fontWeight: 'bold', color: '#283593', fontSize: 22, marginBottom: 4 }}>Iniciar Sesión</Text>
+            <Text style={{ fontFamily:'Montserrat-Bold', color: '#283593', fontSize: 22, marginBottom: 4 }}>Iniciar Sesión</Text>
             <Text style={{ color: '#888', fontSize: 15, marginBottom: 10, textAlign: 'center' }}>Inicia sesión o regístrate para continuar</Text>
           </View>
           <View style={{ backgroundColor: '#fff', borderRadius: 18, padding: 22, width: '90%', maxWidth: 370, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 }}>
-            <Text style={{ color: '#283593', fontWeight: 'bold', fontSize: 14, marginBottom: 6 }}>Correo electrónico</Text>
+            <Text style={{ color: '#283593', fontFamily:'Montserrat-SemiBold', fontSize: 14, marginBottom: 6 }}>Correo electrónico</Text>
             <TextInput style={{ borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 8, padding: 10, marginBottom: 12, fontSize: 15 }} value={email} onChangeText={setEmail} placeholder="tu@email.com" keyboardType="email-address" />
-            <Text style={{ color: '#283593', fontWeight: 'bold', fontSize: 14, marginBottom: 6 }}>Contraseña</Text>
+            <Text style={{ color: '#283593', fontFamily:'Montserrat-SemiBold', fontSize: 14, marginBottom: 6 }}>Contraseña</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 8, marginBottom: 12 }}>
               <TextInput style={{ flex: 1, padding: 10, fontSize: 15 }} value={password} onChangeText={setPassword} placeholder="********" secureTextEntry={!showPassword} />
               <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={{ padding: 8 }}>
@@ -73,20 +73,20 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             </View>
             <TouchableOpacity style={{ backgroundColor: '#5c6bc0', borderRadius: 8, paddingVertical: 12, marginBottom: 10 }} onPress={handleLogin}>
-              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16, textAlign: 'center' }}>Iniciar Sesión</Text>
+              <Text style={{ color: '#fff', fontFamily:'Montserrat-SemiBold', fontSize: 16, textAlign: 'center' }}>Iniciar Sesión</Text>
             </TouchableOpacity>
             <TouchableOpacity style={{ borderRadius: 8, borderWidth: 1, borderColor: '#e0e0e0', paddingVertical: 10, marginBottom: 10 }} onPress={() => navigation.navigate('register')}>
-              <Text style={{ color: '#283593', fontWeight: 'bold', fontSize: 15, textAlign: 'center' }}>Crear cuenta nueva</Text>
+              <Text style={{ color: '#283593', fontFamily:'Montserrat-SemiBold', fontSize: 15, textAlign: 'center' }}>Crear cuenta nueva</Text>
             </TouchableOpacity>
             <View style={{ borderWidth: 1, borderColor: '#5c6bc0', borderRadius: 12, padding: 12, marginTop: 8 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
                 <MaterialCommunityIcons name="office-building-outline" size={22} color="#283593" style={{ marginRight: 8 }} />
-                <Text style={{ fontWeight: 'bold', color: '#283593', fontSize: 15 }}>¿Tienes un negocio turístico?</Text>
+                <Text style={{ fontFamily:'Montserrat-SemiBold', color: '#283593', fontSize: 15 }}>¿Tienes un negocio turístico?</Text>
               </View>
               <Text style={{ color: '#888', fontSize: 13, marginBottom: 8 }}>Regístrate como empresa y llega a más turistas</Text>
               <TouchableOpacity style={{ borderWidth: 1, borderColor: '#283593', borderRadius: 8, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
                 <MaterialCommunityIcons name="briefcase-outline" size={18} color="#283593" style={{ marginRight: 6 }} />
-                <Text style={{ color: '#283593', fontWeight: 'bold', fontSize: 15 }}>Registrar Mi Negocio</Text>
+                <Text style={{ color: '#283593', fontFamily:'Montserrat-SemiBold', fontSize: 15 }}>Registrar Mi Negocio</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -99,13 +99,13 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f6fafd' }}>
       <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 18, paddingBottom: 8, marginBottom: 8 }}>
-        <Text style={{ fontWeight: 'bold', color: '#283593', fontSize: 18 }}>Mi Perfil</Text>
+  <Text style={{ fontFamily:'Montserrat-Bold', color: '#283593', fontSize: 18 }}>Mi Perfil</Text>
         <View style={{ position: 'absolute', right: 24, top: 28, flexDirection: 'row', gap: 18 }}>
           <TouchableOpacity onPress={() => navigation.navigate('EditProfile', { user: user })}>
-            <Text style={{ color: '#1976d2', fontWeight: 'bold', fontSize: 13 }}>✎ Editar</Text>
+            <Text style={{ color: '#1976d2', fontFamily:'Montserrat-SemiBold', fontSize: 13 }}>✎ Editar</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={handleLogout}>
-            <Text style={{ color: '#e53935', fontWeight: 'bold', fontSize: 13 }}>✖ Salir</Text>
+            <Text style={{ color: '#e53935', fontFamily:'Montserrat-SemiBold', fontSize: 13 }}>✖ Salir</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -115,7 +115,7 @@ export default function ProfileScreen() {
             <MaterialCommunityIcons name="account" size={32} color="#1976d2" />
           </View>
           <View>
-            <Text style={{ fontWeight: 'bold', fontSize: 16, color: '#222' }}>{profile.nombre || 'Usuario'}</Text>
+            <Text style={{ fontFamily:'Montserrat-SemiBold', fontSize: 16, color: '#222' }}>{profile.nombre || 'Usuario'}</Text>
             <Text style={{ color: '#888', fontSize: 13 }}>{user?.email}</Text>
           </View>
         </View>
@@ -128,13 +128,13 @@ export default function ProfileScreen() {
           <View style={{ backgroundColor: '#f6fafd', borderRadius: 10, padding: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
               <MaterialCommunityIcons name="map-marker-multiple" size={20} color="#1976d2" style={{ marginRight: 8 }} />
-              <Text style={{ fontWeight: 'bold', color: '#444', fontSize: 14 }}>Intereses turísticos</Text>
+              <Text style={{ fontFamily:'Montserrat-SemiBold', color: '#444', fontSize: 14 }}>Intereses turísticos</Text>
             </View>
             {profile.intereses && profile.intereses.length > 0 ? (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', paddingLeft: 28 }}>
                 {profile.intereses.map((item, idx) => (
                   <View key={idx} style={{ backgroundColor: '#e3f2fd', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, marginRight: 6, marginBottom: 6 }}>
-                    <Text style={{ color: '#1976d2', fontWeight: 'bold', fontSize: 13 }}>{item}</Text>
+                    <Text style={{ color: '#1976d2', fontFamily:'Montserrat-SemiBold', fontSize: 13 }}>{item}</Text>
                   </View>
                 ))}
               </View>

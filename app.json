@@ -4,7 +4,7 @@
     "slug": "DeViajeNew",
     "version": "1.0.0",
     "orientation": "portrait",
-  "icon": "./app/assets/images/imagen de prueba.jpg",
+    "icon": "./app/assets/images/imagen_de_prueba.jpg",
     "scheme": "deviajenew",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,

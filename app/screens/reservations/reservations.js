@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
   },
   tituloPrincipal: {
     fontSize: 20,
-    fontWeight: 'bold',
+  fontFamily:'Montserrat-Bold',
     color: '#1a237e',
     alignSelf: 'center',
     marginTop: 18,
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
   },
   titulo: {
     fontSize: 15,
-    fontWeight: 'bold',
+  fontFamily:'Montserrat-SemiBold',
     color: '#222',
   },
   tipo: {
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   },
   precio: {
     fontSize: 15,
-    fontWeight: 'bold',
+  fontFamily:'Montserrat-SemiBold',
     color: '#0ba4e0',
     marginTop: 2,
   },
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   },
   estadoTexto: {
     fontSize: 12,
-    fontWeight: 'bold',
+  fontFamily:'Montserrat-SemiBold',
     textAlign: 'center',
   },
 });

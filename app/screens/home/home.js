@@ -58,7 +58,7 @@ export default function Home() {
 	const current = carouselData[carouselIndex];
 
 	return (
-		<>
+		<View style={{flex: 1}}>
 			<ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
 				{/* Puedes agregar el logo y slogan dentro del ScrollView si quieres que se desplace con el contenido */}
 				{/* <View style={styles.header}>
@@ -234,7 +234,7 @@ export default function Home() {
 					</View>
 				</View>
 			</ScrollView>
-		</>
+		</View>
 	);
 }
 
