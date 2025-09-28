@@ -1,20 +1,57 @@
-// Recuerda: si cambio el icono o la navegación, revisar estos imports
+import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { auth, db } from '../../../firebaseConfig';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
 import { SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-// Recuerda: aquí está la pantalla principal de perfil. Cambiar layout general aquí.
 export default function ProfileScreen() {
-  // Estado de autenticación simulado (FUTURO: conectar con backend)
+  const navigation = useNavigation();
+  const isFocused = useIsFocused();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState({});
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const navigation = useNavigation();
+
+  useEffect(() => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      setIsAuthenticated(!!user);
+      setUser(user);
+    });
+    return unsubscribeAuth;
+  }, []);
+
+  useEffect(() => {
+    if (user && isFocused) {
+      const docRef = doc(db, 'users', user.uid);
+      const unsubscribeSnapshot = onSnapshot(docRef, (doc) => {
+        if (doc.exists()) {
+          setProfile(doc.data());
+        } else {
+          console.log("No such document!");
+        }
+      });
+      return () => unsubscribeSnapshot();
+    }
+  }, [user, isFocused]);
+
+  const handleLogin = async () => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      alert('Error al iniciar sesión: ' + error.message);
+    }
+  };
+
+  const handleLogout = async () => {
+    await auth.signOut();
+  };
 
   if (!isAuthenticated) {
-    // Pantalla de inicio de sesión como la referencia
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#f6fafd' }}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -35,7 +72,7 @@ export default function ProfileScreen() {
                 <MaterialCommunityIcons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={22} color="#888" />
               </TouchableOpacity>
             </View>
-            <TouchableOpacity style={{ backgroundColor: '#5c6bc0', borderRadius: 8, paddingVertical: 12, marginBottom: 10 }} onPress={() => setIsAuthenticated(true)}>
+            <TouchableOpacity style={{ backgroundColor: '#5c6bc0', borderRadius: 8, paddingVertical: 12, marginBottom: 10 }} onPress={handleLogin}>
               <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16, textAlign: 'center' }}>Iniciar Sesión</Text>
             </TouchableOpacity>
             <TouchableOpacity style={{ borderRadius: 8, borderWidth: 1, borderColor: '#e0e0e0', paddingVertical: 10, marginBottom: 10 }} onPress={() => navigation.navigate('register')}>
@@ -64,10 +101,10 @@ export default function ProfileScreen() {
       <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 18, paddingBottom: 8, marginBottom: 8 }}>
         <Text style={{ fontWeight: 'bold', color: '#283593', fontSize: 18 }}>Mi Perfil</Text>
         <View style={{ position: 'absolute', right: 24, top: 28, flexDirection: 'row', gap: 18 }}>
-          <TouchableOpacity onPress={() => navigation.navigate('EditProfile')}>
+          <TouchableOpacity onPress={() => navigation.navigate('EditProfile', { user: user })}>
             <Text style={{ color: '#1976d2', fontWeight: 'bold', fontSize: 13 }}>✎ Editar</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => { setIsAuthenticated(false); navigation.navigate('Login'); }}>
+          <TouchableOpacity onPress={handleLogout}>
             <Text style={{ color: '#e53935', fontWeight: 'bold', fontSize: 13 }}>✖ Salir</Text>
           </TouchableOpacity>
         </View>
@@ -78,69 +115,73 @@ export default function ProfileScreen() {
             <MaterialCommunityIcons name="account" size={32} color="#1976d2" />
           </View>
           <View>
-            <Text style={{ fontWeight: 'bold', fontSize: 16, color: '#222' }}>Carlos Mendoza</Text>
-            <Text style={{ color: '#888', fontSize: 13 }}>carlos.mendoza@email.com</Text>
+            <Text style={{ fontWeight: 'bold', fontSize: 16, color: '#222' }}>{profile.nombre || 'Usuario'}</Text>
+            <Text style={{ color: '#888', fontSize: 13 }}>{user?.email}</Text>
           </View>
         </View>
         <View style={{ marginTop: 16, gap: 10 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f6fafd', borderRadius: 10, padding: 10 }}>
             <MaterialCommunityIcons name="calendar" size={20} color="#1976d2" style={{ marginRight: 8 }} />
             <Text style={{ color: '#444', fontSize: 14 }}>Fecha de registro</Text>
-            <Text style={{ color: '#888', fontSize: 14, marginLeft: 8 }}>23/09/2025</Text>
+            <Text style={{ color: '#888', fontSize: 14, marginLeft: 8 }}>{profile.createdAt ? new Date(profile.createdAt).toLocaleDateString() : 'No disponible'}</Text>
+          </View>
+          <View style={{ backgroundColor: '#f6fafd', borderRadius: 10, padding: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+              <MaterialCommunityIcons name="map-marker-multiple" size={20} color="#1976d2" style={{ marginRight: 8 }} />
+              <Text style={{ fontWeight: 'bold', color: '#444', fontSize: 14 }}>Intereses turísticos</Text>
+            </View>
+            {profile.intereses && profile.intereses.length > 0 ? (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', paddingLeft: 28 }}>
+                {profile.intereses.map((item, idx) => (
+                  <View key={idx} style={{ backgroundColor: '#e3f2fd', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, marginRight: 6, marginBottom: 6 }}>
+                    <Text style={{ color: '#1976d2', fontWeight: 'bold', fontSize: 13 }}>{item}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={{ color: '#888', fontSize: 13, marginLeft: 28 }}>No seleccionados</Text>
+            )}
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f6fafd', borderRadius: 10, padding: 10 }}>
             <MaterialCommunityIcons name="phone" size={20} color="#1976d2" style={{ marginRight: 8 }} />
             <Text style={{ color: '#444', fontSize: 14 }}>Teléfono</Text>
-            <Text style={{ color: '#888', fontSize: 14, marginLeft: 8 }}>+505 8765-4321</Text>
+            <Text style={{ color: '#888', fontSize: 14, marginLeft: 8 }}>{profile.telefono || 'No registrado'}</Text>
           </View>
         </View>
       </View>
+      
       <View style={{ backgroundColor: '#fff', borderRadius: 18, marginHorizontal: 12, marginBottom: 12, padding: 18, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <Text style={{ fontWeight: 'bold', color: '#222', fontSize: 15 }}>Métodos de Pago</Text>
           <TouchableOpacity><Text style={{ color: '#1976d2', fontWeight: 'bold', fontSize: 13 }}>+ Agregar</Text></TouchableOpacity>
         </View>
-        <View style={{ gap: 10 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f6fafd', borderRadius: 10, padding: 10, justifyContent: 'space-between' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <MaterialCommunityIcons name="credit-card" size={20} color="#1976d2" style={{ marginRight: 8 }} />
-              <Text style={{ color: '#444', fontSize: 14 }}>Visa ****</Text>
-              <Text style={{ color: '#888', fontSize: 14, marginLeft: 8 }}>Termina en 4532</Text>
-            </View>
-            <View style={{ backgroundColor: '#e3f2fd', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 }}>
-              <Text style={{ color: '#1976d2', fontWeight: 'bold', fontSize: 12 }}>Tarjeta</Text>
-            </View>
+        {profile.cards && profile.cards.length > 0 ? (
+          <View style={{ gap: 10 }}>
+            {profile.cards.map((card, index) => (
+              <View key={index} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f6fafd', borderRadius: 10, padding: 10, justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <MaterialCommunityIcons name={card.type === 'Visa' ? "credit-card" : "bank"} size={20} color="#1976d2" style={{ marginRight: 8 }} />
+                  <Text style={{ color: '#444', fontSize: 14 }}>{card.type} ****</Text>
+                  <Text style={{ color: '#888', fontSize: 14, marginLeft: 8 }}>Termina en {card.last4}</Text>
+                </View>
+                <View style={{ backgroundColor: '#e3f2fd', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 }}>
+                  <Text style={{ color: '#1976d2', fontWeight: 'bold', fontSize: 12 }}>{card.type === 'Visa' ? 'Tarjeta' : 'Banco'}</Text>
+                </View>
+              </View>
+            ))}
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f6fafd', borderRadius: 10, padding: 10, justifyContent: 'space-between' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <MaterialCommunityIcons name="bank" size={20} color="#1976d2" style={{ marginRight: 8 }} />
-              <Text style={{ color: '#444', fontSize: 14 }}>Banco BAC</Text>
-              <Text style={{ color: '#888', fontSize: 14, marginLeft: 8 }}>Termina en 7890</Text>
-            </View>
-            <View style={{ backgroundColor: '#e3f2fd', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 }}>
-              <Text style={{ color: '#1976d2', fontWeight: 'bold', fontSize: 12 }}>Banco</Text>
-            </View>
-          </View>
-        </View>
+        ) : (
+          <Text style={{ color: '#888', fontSize: 13, textAlign: 'center', paddingVertical: 10 }}>No hay métodos de pago agregados.</Text>
+        )}
       </View>
-      <View style={{ backgroundColor: '#fff', borderRadius: 18, marginHorizontal: 12, marginBottom: 18, padding: 18, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-          <Text style={{ fontWeight: 'bold', color: '#222', fontSize: 14 }}>Para Negocios</Text>
-          <MaterialCommunityIcons name="briefcase-outline" size={20} color="#1976d2" />
-        </View>
-        <View style={{ alignItems: 'center', marginVertical: 6 }}>
-          <View style={{ backgroundColor: '#e3f2fd', borderRadius: 24, width: 38, height: 38, alignItems: 'center', justifyContent: 'center', marginBottom: 6 }}>
-            <MaterialCommunityIcons name="office-building-outline" size={22} color="#1976d2" />
+      <View style={{ backgroundColor: '#fff', borderRadius: 18, marginHorizontal: 12, padding: 16, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View>
+            <Text style={{ fontWeight: 'bold', color: '#222', fontSize: 14 }}>Para Negocios</Text>
+            <Text style={{ color: '#888', fontSize: 12, marginTop: 2 }}>Registra tu negocio en DeViaje!</Text>
           </View>
-          <Text style={{ fontWeight: 'bold', color: '#222', fontSize: 13, textAlign: 'center' }}>¿Tienes un negocio turístico?</Text>
-          <Text style={{ color: '#888', fontSize: 11, textAlign: 'center', marginBottom: 6 }}>Registra tu negocio en DeViaje! y llega a más turistas</Text>
-          <View style={{ marginBottom: 6 }}>
-            <Text style={{ color: '#1976d2', fontSize: 10 }}>✓ Verificación gratuita</Text>
-            <Text style={{ color: '#1976d2', fontSize: 10 }}>✓ Panel de gestión completo</Text>
-            <Text style={{ color: '#1976d2', fontSize: 10 }}>✓ Mayor visibilidad</Text>
-          </View>
-          <TouchableOpacity style={{ backgroundColor: '#1976d2', borderRadius: 8, paddingVertical: 7, paddingHorizontal: 16 }}>
-            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>+ Registrar Mi Negocio</Text>
+          <TouchableOpacity style={{ backgroundColor: '#1976d2', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 14 }}>
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>Registrar</Text>
           </TouchableOpacity>
         </View>
       </View>

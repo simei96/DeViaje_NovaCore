@@ -1,7 +1,10 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { auth, db } from '../../../firebaseConfig';
 
 const INTERESES = [
   'Turismo Cultural',
@@ -42,7 +45,7 @@ export default function RegisterScreen() {
     return '';
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setTouched({ nombre: true, email: true, password: true, confirmPassword: true });
     const err = validate();
     if (err) {
@@ -51,10 +54,38 @@ export default function RegisterScreen() {
     }
     setError('');
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const { uid, email: userEmail } = userCredential.user;
+      await setDoc(doc(db, 'users', uid), {
+        nombre,
+        email: userEmail,
+        telefono,
+        intereses,
+        createdAt: new Date().toISOString(),
+      });
       setLoading(false);
-      alert('¡Cuenta creada!');
-    }, 1200);
+      // Muestra el mensaje y navega al perfil solo después de aceptar
+      setTimeout(() => {
+        alert('¡Felicidades, Bienvenido a DeViaje!');
+        navigation.reset({
+          index: 0,
+          routes: [{
+            name: 'profile',
+            params: {
+              isAuthenticated: true,
+              email: userEmail,
+              nombre,
+              telefono,
+              intereses
+            }
+          }]
+        });
+      }, 100);
+    } catch (error) {
+      setLoading(false);
+      setError(error.message);
+    }
   };
 
   return (
