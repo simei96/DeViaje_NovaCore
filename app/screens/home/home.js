@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import React, { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'expo-router';
 import { Animated, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { db } from '../../../firebaseConfig';
 
@@ -12,6 +13,7 @@ const CATEGORIAS = [
 ];
 
 export default function Home() {
+	const router = useRouter();
 	const [logoUrl, setLogoUrl] = useState(null);
 	const [promoHotel, setPromoHotel] = useState(null);
 	const [promoTour, setPromoTour] = useState(null);
@@ -235,19 +237,19 @@ export default function Home() {
 					showsHorizontalScrollIndicator={false}
 					contentContainerStyle={styles.buscasBtnRow}
 				>
-					<TouchableOpacity style={styles.buscasBtn} activeOpacity={0.85}>
+					<TouchableOpacity style={styles.buscasBtn} activeOpacity={0.85} onPress={() => router.push('/services/packages')}>
 						<MaterialCommunityIcons name="cube-outline" size={20} color="#283593" style={styles.buscasBtnIcon} />
 						<Text style={styles.buscasBtnText}>Paquetes turísticos</Text>
 					</TouchableOpacity>
-					<TouchableOpacity style={styles.buscasBtn} activeOpacity={0.85}>
+					<TouchableOpacity style={styles.buscasBtn} activeOpacity={0.85} onPress={() => router.push('/services/hotels')}>
 						<MaterialCommunityIcons name="bed" size={20} color="#283593" style={styles.buscasBtnIcon} />
 						<Text style={styles.buscasBtnText}>Hoteles</Text>
 					</TouchableOpacity>
-					<TouchableOpacity style={styles.buscasBtn} activeOpacity={0.85}>
+					<TouchableOpacity style={styles.buscasBtn} activeOpacity={0.85} onPress={() => router.push('/services/restaurants')}>
 						<MaterialCommunityIcons name="silverware-fork-knife" size={20} color="#283593" style={styles.buscasBtnIcon} />
 						<Text style={styles.buscasBtnText}>Restaurantes</Text>
 					</TouchableOpacity>
-					<TouchableOpacity style={styles.buscasBtn} activeOpacity={0.85}>
+					<TouchableOpacity style={styles.buscasBtn} activeOpacity={0.85} onPress={() => router.push('/services/transport')}>
 						<MaterialCommunityIcons name="bus" size={20} color="#283593" style={styles.buscasBtnIcon} />
 						<Text style={styles.buscasBtnText}>Transporte</Text>
 					</TouchableOpacity>
