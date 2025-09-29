@@ -1,8 +1,10 @@
+
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-import { useFonts } from 'expo-font';
+import * as SystemUI from 'expo-system-ui';
+import React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -19,6 +21,14 @@ export default function RootLayout() {
     'Montserrat-SemiBold': require('../assets/fonts/Montserrat-SemiBold.ttf'),
     'Montserrat-Bold': require('../assets/fonts/Montserrat-Bold.ttf'),
   });
+  const appBg = '#f6fafd';
+  React.useEffect(() => { SystemUI.setBackgroundColorAsync(appBg).catch(()=>{}); }, []);
+
+  const baseTheme = colorScheme === 'dark' ? DarkTheme : DefaultTheme;
+  const adjustedTheme = {
+    ...baseTheme,
+    colors: { ...baseTheme.colors, background: appBg, card: appBg },
+  };
 
   if (!fontsLoaded) {
     return (
@@ -29,13 +39,20 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack initialRouteName="index">
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+    <ThemeProvider value={adjustedTheme}>
+      <Stack initialRouteName="index" screenOptions={{
+        headerShown:false,
+  contentStyle:{ backgroundColor: appBg },
+        statusBarTranslucent:true,
+        statusBarStyle: colorScheme === 'dark' ? 'light' : 'dark',
+        statusBarBackgroundColor:'transparent'
+      }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(tabs)" />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
-      <StatusBar style="auto" />
+  {/* Barra de estado realmente transparente y adaptativa */}
+  <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} translucent backgroundColor="transparent" />
     </ThemeProvider>
   );
 }

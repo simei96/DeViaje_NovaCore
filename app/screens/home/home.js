@@ -167,9 +167,9 @@ export default function Home() {
 	}, [carouselData.length]);
 
 	return (
-        <View style={{ flex: 1 }}>
+		<View style={{ flex: 1 }}>
 			<ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
-                <View style={styles.headerCard}>
+				<View style={styles.headerCard}>
                     {logoUrl ? (
                         <Image source={{ uri: logoUrl }} style={styles.logoImage} resizeMode="contain" />
                     ) : (
@@ -689,7 +689,6 @@ const styles = StyleSheet.create({
 	
 	
 
-	
 	headerPro: {
 		alignItems: 'center',
 		justifyContent: 'center',
