@@ -1,20 +1,17 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-// Recuerda: importa aquí tu logo si lo tienes como imagen
-// import logoImg from '../../assets/images/logo.png';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../../firebaseConfig';
 
-// Recuerda: imagen local por defecto para el carrusel
 const defaultImg = require('../../assets/images/imagen_de_prueba.jpg');
 
-// Recuerda: datos de ejemplo para el carrusel principal (Hero Card)
 const carouselData = [
 	{
 		title: 'Volcán Masaya',
 		desc: 'Naturaleza volcánica espectacular',
 		badge: 'Próximamente',
 		btn: 'Descubre Nicaragua',
-		// Recuerda: cuando conectes Firestore, reemplaza image por la url de la base de datos
 		image: null,
 	},
 	{
@@ -26,7 +23,6 @@ const carouselData = [
 	},
 ];
 
-// Recuerda: categorías principales
 const CATEGORIAS = [
 	{ label: 'Playas', icon: 'beach', color: '#fffbe6' },
 	{ label: 'Volcanes', icon: 'terrain', color: '#fff3e0' },
@@ -35,15 +31,24 @@ const CATEGORIAS = [
 ];
 
 export default function Home() {
-	// Recuerda: estado y animación para el carrusel
+	const [logoUrl, setLogoUrl] = useState(null);
 	const [carouselIndex, setCarouselIndex] = useState(0);
 	const fadeAnim = useRef(new Animated.Value(1)).current;
 
-	// Recuerda: aquí puedes traer la imagen de Firestore y actualizar carouselData
-	// useEffect(() => { ... }, []);
-
-	// Animación y cambio automático de tarjeta
 	useEffect(() => {
+		const fetchLogo = async () => {
+			try {
+				const docRef = doc(db, 'WelcomeSlide', 'E6E9tiI2uJkTZqG5DcAC');
+				const docSnap = await getDoc(docRef);
+				if (docSnap.exists()) {
+					setLogoUrl(docSnap.data().ImagenURL);
+				}
+			} catch (error) {
+				console.error("Error fetching logo:", error);
+			}
+		};
+		fetchLogo();
+
 		const interval = setInterval(() => {
 			Animated.sequence([
 				Animated.timing(fadeAnim, { toValue: 0, duration: 350, useNativeDriver: true }),
@@ -54,25 +59,23 @@ export default function Home() {
 		return () => clearInterval(interval);
 	}, [fadeAnim]);
 
-	// Recuerda: datos de la tarjeta actual
 	const current = carouselData[carouselIndex];
 
 	return (
 		<View style={{flex: 1}}>
 			<ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 32 }}>
-				{/* Puedes agregar el logo y slogan dentro del ScrollView si quieres que se desplace con el contenido */}
-				{/* <View style={styles.header}>
-					<Text style={styles.logo}>DEVIAJE</Text>
-					<Text style={styles.slogan}>Turismo sin límite</Text>
-				</View> */}
-
-				{/* Header con fondo blanco, bordes redondeados y centrado */}
+				
+				
 				<View style={styles.headerCard}>
-					<Text style={styles.logoCard}>DEVIAJE!</Text>
+					{logoUrl ? (
+						<Image source={{ uri: logoUrl }} style={styles.logoImage} resizeMode="contain" />
+					) : (
+						<Text style={styles.logoCard}>DEVIAJE!</Text>
+					)}
 					<Text style={styles.sloganCard}>Turismo sin límite</Text>
 				</View>
 
-				{/* Recuerda: Carrusel principal animado */}
+				
 				<View style={styles.carouselWrap}>
 					<Animated.View style={[styles.cardDestacada, { opacity: fadeAnim }]}> 
 						<Image
@@ -91,7 +94,7 @@ export default function Home() {
 							</TouchableOpacity>
 						</View>
 					</Animated.View>
-					{/* Recuerda: dots de navegación del carrusel */}
+					
 					<View style={styles.dotsRow}>
 						{carouselData.map((_, idx) => (
 							<View key={idx} style={[styles.dot, carouselIndex === idx && styles.dotActive]} />
@@ -99,11 +102,11 @@ export default function Home() {
 					</View>
 				</View>
 
-				{/* Recuerda: Título de sección */}
+				
 				<Text style={styles.sectionTitle}>Explora Nicaragua</Text>
 				<Text style={styles.sectionSubtitle}>Vive la Experiencia</Text>
 
-				{/* Recuerda: Chips de categorías */}
+				
 				<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsRow}>
 					{CATEGORIAS.map(cat => (
 						<TouchableOpacity key={cat.label} style={[styles.chip, { backgroundColor: cat.color }]}> 
@@ -113,7 +116,7 @@ export default function Home() {
 					))}
 				</ScrollView>
 
-				{/* Recuerda: Sección de búsqueda o servicios */}
+				
 				<Text style={styles.buscasTitle}>¿Qué buscas?</Text>
 				<Text style={styles.buscasSubtitle}>Explora nuestros servicios turísticos</Text>
 				<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.buscasBtnRow}>
@@ -135,11 +138,11 @@ export default function Home() {
 					</TouchableOpacity>
 				</ScrollView>
 
-				{/* Promociones Especiales: título, subtítulo y cards */}
+				
 				<Text style={{ color: '#283593', fontWeight: 'bold', fontSize: 15, textAlign: 'center', marginTop: 18 }}>Promociones Especiales</Text>
 				<Text style={{ color: '#888', fontSize: 13, textAlign: 'center', marginBottom: 10 }}>Aprovecha estas ofertas limitadas y ahorra en tus experiencias</Text>
 				<View style={{ gap: 18 }}>
-					{/* Card 1 estilo referencia mejorada */}
+					
 					<View style={{ backgroundColor: '#fff', borderRadius: 16, marginHorizontal: 8, marginBottom: 8, elevation: 3, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, borderWidth: 1, borderColor: '#e0e3ea' }}>
 						<Image source={defaultImg} style={{ width: '100%', height: 140, borderTopLeftRadius: 16, borderTopRightRadius: 16 }} resizeMode="cover" />
 						<View style={{ position: 'absolute', top: 14, left: 14, backgroundColor: '#e53935', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 }}>
@@ -148,7 +151,7 @@ export default function Home() {
 						<View style={{ position: 'absolute', top: 14, right: 14, backgroundColor: '#1976d2', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 }}>
 							<Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>Hotel</Text>
 						</View>
-						{/* Etiqueta válido con forma de pastilla mejorada */}
+						
 						<View style={{ position: 'absolute', top: 120, left: '46%', transform: [{ translateX: -80 }], backgroundColor: '#263238', borderRadius: 16, opacity: 0.95, paddingHorizontal: 18, paddingVertical: 5, alignItems: 'center', flexDirection: 'row', minWidth: 160, justifyContent: 'center', zIndex: 2 }}>
 							<MaterialCommunityIcons name="shield-check" size={15} color="#fff" style={{ marginRight: 6 }} />
 							<Text style={{ color: '#fff', fontSize: 12 }}>Válido hasta 2025-02-15</Text>
@@ -169,7 +172,7 @@ export default function Home() {
 							</View>
 						</View>
 					</View>
-					{/* Card 2 estilo referencia mejorada */}
+					
 					<View style={{ backgroundColor: '#fff', borderRadius: 16, marginHorizontal: 8, marginBottom: 8, elevation: 3, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, borderWidth: 1, borderColor: '#e0e3ea' }}>
 						<Image source={defaultImg} style={{ width: '100%', height: 140, borderTopLeftRadius: 16, borderTopRightRadius: 16 }} resizeMode="cover" />
 						<View style={{ position: 'absolute', top: 14, left: 14, backgroundColor: '#e53935', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 }}>
@@ -178,7 +181,7 @@ export default function Home() {
 						<View style={{ position: 'absolute', top: 14, right: 14, backgroundColor: '#ffa000', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 }}>
 							<Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>Tour</Text>
 						</View>
-						{/* Etiqueta válido con forma de pastilla mejorada */}
+						
 						<View style={{ position: 'absolute', top: 120, left: '46%', transform: [{ translateX: -80 }], backgroundColor: '#263238', borderRadius: 16, opacity: 0.95, paddingHorizontal: 18, paddingVertical: 5, alignItems: 'center', flexDirection: 'row', minWidth: 160, justifyContent: 'center', zIndex: 2 }}>
 							<MaterialCommunityIcons name="shield-check" size={15} color="#fff" style={{ marginRight: 6 }} />
 							<Text style={{ color: '#fff', fontSize: 12 }}>Válido hasta 2025-01-31</Text>
@@ -201,13 +204,13 @@ export default function Home() {
 					</View>
 				</View>
 
-				{/* Sube aún más la sección 'Cerca de ti' para mayor proximidad al top */}
+				
 				<View style={{ marginTop: 18, alignItems: 'center' }}>
 					<Text style={[styles.sectionTitle, { textAlign: 'center', marginTop: 0 }]}>Cerca de ti</Text>
-					{/* Reemplaza las cards de 'Cerca de ti' por el nuevo diseño */}
-					{/* Cards de 'Cerca de ti' alineadas una a la izquierda y otra a la derecha */}
+					
+					
 					<View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 }}>
-						<View style={[styles.cercaCard, { width: 170 }]}> {/* Izquierda */}
+						<View style={[styles.cercaCard, { width: 170 }]}> 
 							<Image source={defaultImg} style={[styles.cercaImg, { width: 170, height: 100 }]} resizeMode="cover" />
 							<View style={styles.cercaBadge}><Text style={styles.cercaBadgeText}>Volcán</Text></View>
 							<View style={styles.cercaRating}><MaterialCommunityIcons name="star" size={15} color="#FFD700" /><Text style={styles.cercaRatingText}>4.8</Text></View>
@@ -219,7 +222,7 @@ export default function Home() {
 								</View>
 							</View>
 						</View>
-						<View style={[styles.cercaCard, { width: 170 }]}> {/* Derecha */}
+						<View style={[styles.cercaCard, { width: 170 }]}> 
 							<Image source={defaultImg} style={[styles.cercaImg, { width: 170, height: 100 }]} resizeMode="cover" />
 							<View style={[styles.cercaBadge, { backgroundColor: '#26c6da' }]}><Text style={styles.cercaBadgeText}>Isla</Text></View>
 							<View style={styles.cercaRating}><MaterialCommunityIcons name="star" size={15} color="#FFD700" /><Text style={styles.cercaRatingText}>4.9</Text></View>
@@ -238,12 +241,16 @@ export default function Home() {
 	);
 }
 
-// Recuerda: aquí puedes cambiar los estilos del home
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
 		backgroundColor: '#f6fafd',
 		paddingTop: 24, 
+	},
+	logoImage: {
+		width: 180,
+		height: 50,
+		marginBottom: 4,
 	},
 		header: {
 			alignItems: 'center',
@@ -497,10 +504,10 @@ const styles = StyleSheet.create({
 		color: '#fff',
 		fontWeight: 'bold',
 	},
-	// FUTURO: Si agregas más servicios turísticos, actualiza los iconos y textos en los botones de '¿Qué buscas?'.
-	// FUTURO: Puedes conectar los botones a navegación usando React Navigation.
-	// FUTURO: Si agregas más destinos en 'Cerca de ti', usa un array y mapéalos dinámicamente.
-	// FUTURO: Para el header, puedes usar un componente fijo con 'position: absolute' o 'position: sticky' si usas web.
+	
+	
+	
+	
 	headerFixed: {
 		position: 'absolute',
 		top: 0,
@@ -512,12 +519,12 @@ const styles = StyleSheet.create({
 		paddingTop: 32,
 		paddingBottom: 8,
 	},
-	// FUTURO: Si agregas imágenes personalizadas, actualiza la ruta en defaultImg y en los datos de las cards.
-	// FUTURO: Si el header fijo tapa el carrusel, ajusta el paddingTop del container o usa un header flotante solo para web.
-	// FUTURO: Si agregas navegación, conecta los botones de servicios turísticos con las rutas correspondientes.
-	// FUTURO: Si cambias la estructura de las cards, actualiza los estilos y el mapeo de datos.
+	
+	
+	
+	
 
-	// Nuevos estilos para el header profesional
+	
 	headerPro: {
 		alignItems: 'center',
 		justifyContent: 'center',

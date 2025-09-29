@@ -3,6 +3,7 @@ import { getAnalytics } from "firebase/analytics";
 import { initializeApp } from "firebase/app";
 import { createUserWithEmailAndPassword, getAuth, initializeAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { Platform } from "react-native";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBeVaajLgEgmwPPfd2ubXtSDZo2ekkpb84",
@@ -15,7 +16,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+const analytics = Platform.OS === 'web' ? getAnalytics(app) : null;
 export const auth = getAuth(app);
 export const createUserEmailPassword = createUserWithEmailAndPassword;
 export const signInEmailPassword = signInWithEmailAndPassword;
