@@ -65,7 +65,6 @@ export default function RegisterScreen() {
         createdAt: new Date().toISOString(),
       });
       setLoading(false);
-      // Muestra el mensaje y navega al perfil solo después de aceptar
       setTimeout(() => {
         alert('¡Felicidades, Bienvenido a DeViaje!');
         navigation.reset({

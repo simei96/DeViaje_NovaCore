@@ -3,7 +3,6 @@ import { Stack } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-// Datos estáticos de ejemplo (luego se van reemplazar por Firestore)
 const FILTROS = ['Todas','Histórico','Gastronómico','Cultural','Natural','Rural'];
 const TIPO_CAMBIO = 36.5;
 const RUTAS = [

@@ -62,13 +62,13 @@ export default function ReservationsScreen() {
   // Recuerda: aquí se dibuja cada card de reserva. Si quiero cambiar el diseño de la card, hacerlo aquí.
   const renderReserva = ({ item }) => (
     <View style={styles.card}>
-      <View style={{ flexDirection: 'row' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <Image source={item.imagen} style={styles.imagen} />
         <View style={{ flex: 1, marginLeft: 10 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <Text style={styles.titulo}>{item.titulo}</Text>
-            <View style={[styles.estado, item.estado === 'Confirmada' ? styles.estadoConfirmada : styles.estadoPendiente]}>
-              <Text style={[styles.estadoTexto, item.estado === 'Confirmada' ? { color: '#219653' } : { color: '#B49B0E' }]}>{item.estado}</Text>
+            <View style={[styles.estado, item.estado === 'Confirmada' ? styles.estadoConfirmada : styles.estadoPendiente, { minWidth: 48, minHeight: 20, paddingHorizontal: 6, paddingVertical: 2 }] }>
+              <Text style={[styles.estadoTexto, item.estado === 'Confirmada' ? { color: '#219653' } : { color: '#B49B0E' }, { fontSize: 11, fontWeight: 'bold' }]}>{item.estado}</Text>
             </View>
           </View>
           <Text style={styles.tipo}>{item.tipo === 'Paquete' ? 'Paquete Turístico' : item.tipo}</Text>
