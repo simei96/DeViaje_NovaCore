@@ -45,7 +45,6 @@ export default function TransportListScreen(){
   const [refreshing, setRefreshing] = useState(false);
   const scrollRef = useRef(null);
 
-  // Suscripción Firestore (colección con posible error tipográfico 'trasnportes')
   useEffect(() => {
   const colRef = collection(db, 'Transportes');
     const unsub = onSnapshot(colRef, snap => {

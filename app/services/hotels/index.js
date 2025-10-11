@@ -41,7 +41,7 @@ export default function HotelsListScreen(){
   const scrollRef = useRef(null);
 
   useEffect(()=>{
-  const colRef = collection(db,'Hoteles'); // Nombre de colección real
+  const colRef = collection(db,'Hoteles');
     const unsub = onSnapshot(colRef, snap => {
       setHospedajes(snap.docs.map(normalizeHotel));
       setLoading(false);

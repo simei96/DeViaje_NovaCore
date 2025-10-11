@@ -9,7 +9,6 @@ type ParallaxScrollViewProps = {
 };
 
 export default function ParallaxScrollView({ children, headerBackgroundColor, headerImage }: ParallaxScrollViewProps) {
-  // Aquí puedes agregar lógica de parallax si lo necesitas
   return (
     <ScrollView style={[styles.container, headerBackgroundColor ? { backgroundColor: headerBackgroundColor.light } : {}]}>
       {headerImage}

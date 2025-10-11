@@ -3,7 +3,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { addDoc, collection, doc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { db } from '../../../firebaseConfig';
+import { auth, db } from '../../../firebaseConfig';
 import { formatCordoba } from '../../../utils/format';
 
 const USER_ID_PLACEHOLDER = 'anon'; 
@@ -37,13 +37,14 @@ export default function HotelDetailScreen(){
     if(!data) return; 
     try {
       setSaving(true);
+      const userId = auth.currentUser?.uid || USER_ID_PLACEHOLDER;
       await addDoc(collection(db,'Reservas'), {
         Titulo: data.Nombre || 'Hotel',
         Tipo: data.Tipo || 'Hotel',
         Precio: data.PrecioPorNoche || 0,
         Lugar: data.Ubicacion || 'Ciudad',
         Estado: 'pendiente',
-        UsuarioId: USER_ID_PLACEHOLDER,
+        UsuarioId: userId,
         FechaReserva: serverTimestamp(),
       });
       Alert.alert('Reserva','Reserva creada correctamente');

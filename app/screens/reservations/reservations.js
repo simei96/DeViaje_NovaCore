@@ -1,42 +1,9 @@
-import React, { useState } from 'react';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
 import { FlatList, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { auth, db } from '../../../firebaseConfig';
 
-// Recuerda: aquí están los datos de ejemplo de reservas. Cambiar por datos reales de la API cuando estén listos.
-const RESERVAS = [
-  {
-    id: 'NT-2024-001',
-  titulo: 'Cerro Negro',
-    tipo: 'Paquete',
-    estado: 'Confirmada',
-    fecha: '14 sept',
-    lugar: 'León',
-    personas: 2,
-    precio: 3000,
-    imagen: require('../../assets/images/imagen_de_prueba.jpg'),
-  },
-  {
-    id: 'NT-2024-002',
-    titulo: 'Playas del Pacífico',
-    tipo: 'Paquete',
-    estado: 'Pendiente',
-    fecha: '24 sept',
-    lugar: 'San Juan del Sur',
-    personas: 2,
-    precio: 2400,
-    imagen: require('../../assets/images/imagen_de_prueba.jpg'),
-  },
-  {
-    id: 'NT-2024-004',
-    titulo: 'Hotel Casa Colonial',
-    tipo: 'Hospedaje',
-    estado: 'Confirmada',
-    fecha: '04 oct',
-    lugar: 'Granada',
-    personas: 2,
-    precio: 1500,
-    imagen: require('../../assets/images/imagen_de_prueba.jpg'),
-  },
-];
+const RESERVA_IMG = require('../../assets/images/imagen_de_prueba.jpg');
 
 // Recuerda: si agrego más tipos de reservas, también debo agregarlos aquí en los filtros.
 const FILTROS = [
@@ -48,13 +15,36 @@ const FILTROS = [
 
 // Recuerda: aquí se arma toda la pantalla de reservas. Si quiero cambiar el layout general, hacerlo aquí.
 export default function ReservationsScreen() {
-  // Recuerda: aquí guardo el filtro seleccionado
   const [filtro, setFiltro] = useState('Todas');
-  // Recuerda: aquí guardo el texto de búsqueda
   const [busqueda, setBusqueda] = useState('');
+  const [reservas, setReservas] = useState([]);
 
-  // Recuerda: aquí filtro las reservas según el filtro y la búsqueda. Si la búsqueda falla, revisar este filtro.
-  const reservasFiltradas = RESERVAS.filter(r =>
+  useEffect(() => {
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
+    const reservasRef = collection(db, 'Reservas');
+    const q = query(reservasRef, where('UsuarioId', '==', userId));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const reservas = snapshot.docs.map(doc => {
+        const d = doc.data();
+        return {
+          id: doc.id,
+          titulo: d.Titulo || 'Reserva',
+          tipo: d.Tipo || 'Paquete',
+          estado: d.Estado || 'Pendiente',
+          fecha: d.FechaReserva?.toDate ? d.FechaReserva.toDate().toLocaleDateString() : '',
+          lugar: d.Lugar || '',
+          personas: d.Adultos || d.Personas || 1,
+          precio: d.Precio || 0,
+          imagen: RESERVA_IMG,
+        };
+      });
+      setReservas(reservas);
+    });
+    return unsubscribe;
+  }, []);
+
+  const reservasFiltradas = reservas.filter(r =>
     (filtro === 'Todas' || r.tipo === filtro) &&
     (r.titulo.toLowerCase().includes(busqueda.toLowerCase()) || r.lugar.toLowerCase().includes(busqueda.toLowerCase()))
   );

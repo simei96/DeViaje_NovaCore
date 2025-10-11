@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, Alert, Linking } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { addDoc, collection, doc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { db } from '../../../firebaseConfig';
 import { formatCordoba } from '../../../utils/format';
 

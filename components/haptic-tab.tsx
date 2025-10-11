@@ -3,12 +3,10 @@ import { PlatformPressable } from '@react-navigation/elements';
 import * as Haptics from 'expo-haptics';
 
 export function HapticTab(props: BottomTabBarButtonProps) {
-  // Filtra la prop style para evitar que llegue a un Fragment accidentalmente
   const { style, ...rest } = props;
   return (
     <PlatformPressable
       {...rest}
-      // Si PlatformPressable soporta style, puedes agregar style={style} aquí
       onPressIn={(ev) => {
         if (process.env.EXPO_OS === 'ios') {
           // Add a soft haptic feedback when pressing down on the tabs.

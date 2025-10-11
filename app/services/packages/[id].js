@@ -1,13 +1,13 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { formatCordoba } from '../../../utils/format';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { addDoc, collection, doc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { db } from '../../../firebaseConfig';
+import { formatCordoba } from '../../../utils/format';
 
 const USER_ID_PLACEHOLDER = 'anon';
-const precioBase = 1000; // Valor base por defecto
+const precioBase = 1000;
 
 export default function RutaTuristicaDetailScreen(){
   const { id } = useLocalSearchParams();
