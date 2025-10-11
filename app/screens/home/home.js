@@ -397,57 +397,61 @@ useEffect(() => {
 					<Text style={{ color: '#888', fontSize: 13, textAlign: 'center', marginBottom: 10 }}>Aprovecha estas ofertas limitadas y ahorra en tus experiencias</Text>
 					<View style={{ gap: 18 }}>
 						{/* Card Hotel */}
-						<View style={{ backgroundColor: '#fff', borderRadius: 16, marginHorizontal: 8, elevation: 3, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, borderWidth: 1, borderColor: '#e0e3ea' }}>
-							<Image source={promoHotel?.ImageURL ? { uri: promoHotel.ImageURL } : undefined} style={{ width: '100%', height: 140, borderTopLeftRadius: 16, borderTopRightRadius: 16, backgroundColor:'#eceff1' }} resizeMode="cover" />
-							<View style={{ position: 'absolute', top: 14, left: 14, backgroundColor: '#e53935', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 }}>
-								<Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>Hotel</Text>
-							</View>
-							<View style={{ position: 'absolute', top: 120, alignSelf: 'center', backgroundColor: '#263238', borderRadius: 16, opacity: 0.95, paddingHorizontal: 18, paddingVertical: 5, alignItems: 'center', flexDirection: 'row', minWidth: 160, justifyContent: 'center', zIndex: 2 }}>
-								<MaterialCommunityIcons name="shield-check" size={15} color="#fff" style={{ marginRight: 6 }} />
-								<Text style={{ color: '#fff', fontSize: 12 }}>Válido hasta 2025-02-15</Text>
-							</View>
-							<View style={{ padding: 16 }}>
-								<Text style={{ fontWeight: 'bold', color: '#283593', fontSize: 15, marginBottom: 10, marginTop: 8 }}>Hotel Colonial Granada</Text>
-								<View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
-									<MaterialCommunityIcons name="map-marker" size={14} color="#888" />
-									<Text style={{ color: '#888', fontSize: 13, marginLeft: 2 }}>Granada</Text>
-									<MaterialCommunityIcons name="star" size={14} color="#FFD700" style={{ marginLeft: 8 }} />
-									<Text style={{ color: '#444', fontWeight: 'bold', fontSize: 13, marginLeft: 2 }}>4.8</Text>
+						<TouchableOpacity activeOpacity={0.9} onPress={() => router.push('/promotions/Promo_002')}>
+							<View style={{ backgroundColor: '#fff', borderRadius: 16, marginHorizontal: 8, elevation: 3, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, borderWidth: 1, borderColor: '#e0e3ea' }}>
+								<Image source={promoHotel?.ImageURL ? { uri: promoHotel.ImageURL } : undefined} style={{ width: '100%', height: 140, borderTopLeftRadius: 16, borderTopRightRadius: 16, backgroundColor:'#eceff1' }} resizeMode="cover" />
+								<View style={{ position: 'absolute', top: 14, left: 14, backgroundColor: '#e53935', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 }}>
+									<Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>Hotel</Text>
 								</View>
-								<Text style={{ color: '#888', fontSize: 13 }}>Habitación doble con desayuno incluido</Text>
-								<View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 2 }}>
-									<Text style={{ color: '#283593', fontWeight: 'bold', fontSize: 16 }}>C$ 3200</Text>
-									<Text style={{ color: '#888', fontSize: 13, textDecorationLine: 'line-through', marginLeft: 6 }}>C$ 4500</Text>
-									<Text style={{ color: '#888', fontSize: 11, marginLeft: 6 }}>Por noche</Text>
+								<View style={{ position: 'absolute', top: 120, alignSelf: 'center', backgroundColor: '#263238', borderRadius: 16, opacity: 0.95, paddingHorizontal: 18, paddingVertical: 5, alignItems: 'center', flexDirection: 'row', minWidth: 160, justifyContent: 'center', zIndex: 2 }}>
+									<MaterialCommunityIcons name="shield-check" size={15} color="#fff" style={{ marginRight: 6 }} />
+									<Text style={{ color: '#fff', fontSize: 12 }}>Válido hasta 2025-02-15</Text>
+								</View>
+								<View style={{ padding: 16 }}>
+									<Text style={{ fontWeight: 'bold', color: '#283593', fontSize: 15, marginBottom: 10, marginTop: 8 }}>Hotel Colonial Granada</Text>
+									<View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+										<MaterialCommunityIcons name="map-marker" size={14} color="#888" />
+										<Text style={{ color: '#888', fontSize: 13, marginLeft: 2 }}>Granada</Text>
+										<MaterialCommunityIcons name="star" size={14} color="#FFD700" style={{ marginLeft: 8 }} />
+										<Text style={{ color: '#444', fontWeight: 'bold', fontSize: 13, marginLeft: 2 }}>4.8</Text>
+									</View>
+									<Text style={{ color: '#888', fontSize: 13 }}>Habitación doble con desayuno incluido</Text>
+									<View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 2 }}>
+										<Text style={{ color: '#283593', fontWeight: 'bold', fontSize: 16 }}>C$ 3200</Text>
+										<Text style={{ color: '#888', fontSize: 13, textDecorationLine: 'line-through', marginLeft: 6 }}>C$ 4500</Text>
+										<Text style={{ color: '#888', fontSize: 11, marginLeft: 6 }}>Por noche</Text>
+									</View>
 								</View>
 							</View>
-						</View>
+						</TouchableOpacity>
 						{/* Card Tour */}
-						<View style={{ backgroundColor: '#fff', borderRadius: 16, marginHorizontal: 8, elevation: 3, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, borderWidth: 1, borderColor: '#e0e3ea' }}>
-							<Image source={promoTour?.ImagenURL ? { uri: promoTour.ImagenURL } : undefined} style={{ width: '100%', height: 140, borderTopLeftRadius: 16, borderTopRightRadius: 16, backgroundColor:'#eceff1' }} resizeMode="cover" />
-							<View style={{ position: 'absolute', top: 14, left: 14, backgroundColor: '#ffa000', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 }}>
-								<Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>Tour</Text>
-							</View>
-							<View style={{ position: 'absolute', top: 120, alignSelf: 'center', backgroundColor: '#263238', borderRadius: 16, opacity: 0.95, paddingHorizontal: 18, paddingVertical: 5, alignItems: 'center', flexDirection: 'row', minWidth: 160, justifyContent: 'center', zIndex: 2 }}>
-								<MaterialCommunityIcons name="shield-check" size={15} color="#fff" style={{ marginRight: 6 }} />
-								<Text style={{ color: '#fff', fontSize: 12 }}>Válido hasta 2025-01-31</Text>
-							</View>
-							<View style={{ padding: 16 }}>
-								<Text style={{ fontWeight: 'bold', color: '#283593', fontSize: 15, marginBottom: 10, marginTop: 8 }}>Tour Volcán Masaya</Text>
-								<View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
-									<MaterialCommunityIcons name="map-marker" size={14} color="#888" />
-									<Text style={{ color: '#888', fontSize: 13, marginLeft: 2 }}>Masaya</Text>
-									<MaterialCommunityIcons name="star" size={14} color="#FFD700" style={{ marginLeft: 8 }} />
-									<Text style={{ color: '#444', fontWeight: 'bold', fontSize: 13, marginLeft: 2 }}>4.9</Text>
+						<TouchableOpacity activeOpacity={0.9} onPress={() => router.push('/promotions/Promo_003')}>
+							<View style={{ backgroundColor: '#fff', borderRadius: 16, marginHorizontal: 8, elevation: 3, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, borderWidth: 1, borderColor: '#e0e3ea' }}>
+								<Image source={promoTour?.ImagenURL ? { uri: promoTour.ImagenURL } : undefined} style={{ width: '100%', height: 140, borderTopLeftRadius: 16, borderTopRightRadius: 16, backgroundColor:'#eceff1' }} resizeMode="cover" />
+								<View style={{ position: 'absolute', top: 14, left: 14, backgroundColor: '#ffa000', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 }}>
+									<Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>Tour</Text>
 								</View>
-								<Text style={{ color: '#888', fontSize: 13 }}>Tour nocturno con cena incluida</Text>
-								<View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 2 }}>
-									<Text style={{ color: '#283593', fontWeight: 'bold', fontSize: 16 }}>C$ 1990</Text>
-									<Text style={{ color: '#888', fontSize: 13, textDecorationLine: 'line-through', marginLeft: 6 }}>C$ 2800</Text>
-									<Text style={{ color: '#888', fontSize: 11, marginLeft: 6 }}>Por noche</Text>
+								<View style={{ position: 'absolute', top: 120, alignSelf: 'center', backgroundColor: '#263238', borderRadius: 16, opacity: 0.95, paddingHorizontal: 18, paddingVertical: 5, alignItems: 'center', flexDirection: 'row', minWidth: 160, justifyContent: 'center', zIndex: 2 }}>
+									<MaterialCommunityIcons name="shield-check" size={15} color="#fff" style={{ marginRight: 6 }} />
+									<Text style={{ color: '#fff', fontSize: 12 }}>Válido hasta 2025-01-31</Text>
+								</View>
+								<View style={{ padding: 16 }}>
+									<Text style={{ fontWeight: 'bold', color: '#283593', fontSize: 15, marginBottom: 10, marginTop: 8 }}>Tour Volcán Masaya</Text>
+									<View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+										<MaterialCommunityIcons name="map-marker" size={14} color="#888" />
+										<Text style={{ color: '#888', fontSize: 13, marginLeft: 2 }}>Masaya</Text>
+										<MaterialCommunityIcons name="star" size={14} color="#FFD700" style={{ marginLeft: 8 }} />
+										<Text style={{ color: '#444', fontWeight: 'bold', fontSize: 13, marginLeft: 2 }}>4.9</Text>
+									</View>
+									<Text style={{ color: '#888', fontSize: 13 }}>Tour nocturno con cena incluida</Text>
+									<View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 2 }}>
+										<Text style={{ color: '#283593', fontWeight: 'bold', fontSize: 16 }}>C$ 1990</Text>
+										<Text style={{ color: '#888', fontSize: 13, textDecorationLine: 'line-through', marginLeft: 6 }}>C$ 2800</Text>
+										<Text style={{ color: '#888', fontSize: 11, marginLeft: 6 }}>Por noche</Text>
+									</View>
 								</View>
 							</View>
-						</View>
+						</TouchableOpacity>
 					</View>
 
 					{/* Cerca de ti */}

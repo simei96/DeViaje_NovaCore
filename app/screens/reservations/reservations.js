@@ -5,7 +5,6 @@ import { auth, db } from '../../../firebaseConfig';
 
 const RESERVA_IMG = require('../../assets/images/imagen_de_prueba.jpg');
 
-// Recuerda: si agrego más tipos de reservas, también debo agregarlos aquí en los filtros.
 const FILTROS = [
   { label: 'Todas', value: 'Todas' },
   { label: 'Paquetes', value: 'Paquete' },
@@ -13,7 +12,6 @@ const FILTROS = [
   { label: 'Hospedaje', value: 'Hospedaje' },
 ];
 
-// Recuerda: aquí se arma toda la pantalla de reservas. Si quiero cambiar el layout general, hacerlo aquí.
 export default function ReservationsScreen() {
   const [filtro, setFiltro] = useState('Todas');
   const [busqueda, setBusqueda] = useState('');
@@ -23,33 +21,58 @@ export default function ReservationsScreen() {
     const userId = auth.currentUser?.uid;
     if (!userId) return;
     const reservasRef = collection(db, 'Reservas');
-    const q = query(reservasRef, where('UsuarioId', '==', userId));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const reservas = snapshot.docs.map(doc => {
-        const d = doc.data();
+    const qLegacy = query(reservasRef, where('UsuarioId', '==', userId));
+    const qNew = query(reservasRef, where('userId', '==', userId));
+
+    let snapLegacy = [];
+    let snapNew = [];
+
+    const combineAndSet = () => {
+      const map = new Map();
+      [...snapLegacy, ...snapNew].forEach(d => map.set(d.id, d));
+      const merged = Array.from(map.values()).map(docItem => {
+        const d = docItem.data();
+        const titulo = d.Titulo || d.title || d.titulo || d.nombre || 'Reserva';
+        const tipo = d.Tipo || d.tipo || d.Type || 'Paquete';
+        const estado = d.Estado || d.status || d.estado || 'Pendiente';
+        let fecha = '';
+        if (d.FechaReserva && d.FechaReserva.toDate) fecha = d.FechaReserva.toDate().toLocaleDateString();
+        else if (d.reserveDate && typeof d.reserveDate === 'string') fecha = d.reserveDate.split(' ')[0];
+        else if (d.reserveDate && d.reserveDate.toDate) fecha = d.reserveDate.toDate().toLocaleDateString();
+        const lugar = d.Lugar || d.lugar || d.place || '';
+        const personas = d.Adultos || d.Personas || d.personas || 1;
+        const precio = d.Precio || d.price || 0;
         return {
-          id: doc.id,
-          titulo: d.Titulo || 'Reserva',
-          tipo: d.Tipo || 'Paquete',
-          estado: d.Estado || 'Pendiente',
-          fecha: d.FechaReserva?.toDate ? d.FechaReserva.toDate().toLocaleDateString() : '',
-          lugar: d.Lugar || '',
-          personas: d.Adultos || d.Personas || 1,
-          precio: d.Precio || 0,
+          id: docItem.id,
+          titulo,
+          tipo,
+          estado,
+          fecha,
+          lugar,
+          personas,
+          precio,
           imagen: RESERVA_IMG,
         };
       });
-      setReservas(reservas);
+      setReservas(merged);
+    };
+
+    const unsubLegacy = onSnapshot(qLegacy, (snapshot) => {
+      snapLegacy = snapshot.docs;
+      combineAndSet();
     });
-    return unsubscribe;
+    const unsubNew = onSnapshot(qNew, (snapshot) => {
+      snapNew = snapshot.docs;
+      combineAndSet();
+    });
+
+    return () => { unsubLegacy(); unsubNew(); };
   }, []);
 
   const reservasFiltradas = reservas.filter(r =>
     (filtro === 'Todas' || r.tipo === filtro) &&
     (r.titulo.toLowerCase().includes(busqueda.toLowerCase()) || r.lugar.toLowerCase().includes(busqueda.toLowerCase()))
   );
-
-  // Recuerda: aquí se dibuja cada card de reserva. Si quiero cambiar el diseño de la card, hacerlo aquí.
   const renderReserva = ({ item }) => (
     <View style={styles.card}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -74,14 +97,10 @@ export default function ReservationsScreen() {
     </View>
   );
 
-  // Recuerda: aquí está el render principal de la pantalla. Si algo se ve raro en la UI, revisar aquí primero.
   return (
     <View style={styles.container}>
-  {/* Recuerda: este es el header principal "Mis Reservas" */}
       <Text style={styles.tituloPrincipal}>Mis Reservas</Text>
-  {/* Recuerda: este espacio es para separar el header del resto */}
       <View style={{ height: 16 }} />
-  {/* Recuerda: aquí está la barra de búsqueda. Cambiar placeholder o estilos aquí. */}
       <View style={styles.searchBox}>
         <TextInput
           style={styles.input}
@@ -90,7 +109,6 @@ export default function ReservationsScreen() {
           onChangeText={setBusqueda}
         />
       </View>
-  {/* Recuerda: estos son los filtros deslizables. Si agrego más filtros, revisar el array FILTROS arriba. */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -106,9 +124,7 @@ export default function ReservationsScreen() {
           </TouchableOpacity>
         ))}
       </ScrollView>
-  {/* Recuerda: aquí se muestra la cantidad de reservas encontradas. */}
       <Text style={styles.cantidad}>{reservasFiltradas.length} reservas</Text>
-  {/* Recuerda: aquí se muestra la lista de reservas. Si la lista no aparece, revisar FlatList y renderReserva. */}
       <FlatList
         data={reservasFiltradas}
         keyExtractor={item => item.id}
@@ -120,8 +136,6 @@ export default function ReservationsScreen() {
     </View>
   );
 }
-
-// Recuerda: aquí están todos los estilos de la pantalla de reservas. Cambiar colores, márgenes, etc. aquí.
 const styles = StyleSheet.create({
   container: {
     flex: 1,

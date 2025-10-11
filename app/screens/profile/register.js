@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import React, { useState } from 'react';
@@ -17,6 +18,9 @@ const INTERESES = [
 
 export default function RegisterScreen() {
   const navigation = useNavigation();
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  const returnTo = params.returnTo ? decodeURIComponent(params.returnTo) : null;
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [telefono, setTelefono] = useState('');
@@ -67,19 +71,23 @@ export default function RegisterScreen() {
       setLoading(false);
       setTimeout(() => {
         alert('¡Felicidades, Bienvenido a DeViaje!');
-        navigation.reset({
-          index: 0,
-          routes: [{
-            name: 'profile',
-            params: {
-              isAuthenticated: true,
-              email: userEmail,
-              nombre,
-              telefono,
-              intereses
-            }
-          }]
-        });
+        if (returnTo) {
+          router.replace(returnTo);
+        } else {
+          navigation.reset({
+            index: 0,
+            routes: [{
+              name: 'profile',
+              params: {
+                isAuthenticated: true,
+                email: userEmail,
+                nombre,
+                telefono,
+                intereses
+              }
+            }]
+          });
+        }
       }, 100);
     } catch (error) {
       setLoading(false);

@@ -1,10 +1,11 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useIsFocused, useNavigation, useRoute } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { auth, db } from '../../../firebaseConfig';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation, useIsFocused } from '@react-navigation/native';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { auth, db } from '../../../firebaseConfig';
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
@@ -16,6 +17,9 @@ export default function ProfileScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const route = useRoute();
+  const router = useRouter();
+  const returnTo = route.params?.returnTo ? decodeURIComponent(route.params.returnTo) : null;
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
@@ -42,6 +46,10 @@ export default function ProfileScreen() {
   const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      if (returnTo) {
+        router.replace(returnTo);
+        return;
+      }
     } catch (error) {
       alert('Error al iniciar sesión: ' + error.message);
     }
@@ -94,8 +102,6 @@ export default function ProfileScreen() {
       </SafeAreaView>
     );
   }
-
-  // Si está autenticado, muestra perfil detallado
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f6fafd' }}>
       <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 18, paddingBottom: 8, marginBottom: 8 }}>
