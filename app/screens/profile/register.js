@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import React, { useState } from 'react';
@@ -43,7 +43,10 @@ export default function RegisterScreen() {
     if (!nombre.trim()) return 'El nombre es obligatorio.';
     if (!email.trim()) return 'El correo es obligatorio.';
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return 'Correo inválido.';
-    if (password.length < 6) return 'La contraseña debe tener al menos 6 caracteres.';
+    if (password.length < 8) return 'La contraseña debe tener al menos 8 caracteres.';
+    if (!/[A-Z]/.test(password)) return 'La contraseña debe contener al menos una letra mayúscula.';
+    if (!/[a-z]/.test(password)) return 'La contraseña debe contener al menos una letra minúscula.';
+    if (!/[0-9]/.test(password)) return 'La contraseña debe contener al menos un número.';
     if (password !== confirmPassword) return 'Las contraseñas no coinciden.';
     if (intereses.length === 0) return 'Selecciona al menos un tipo de turismo.';
     return '';
@@ -91,7 +94,16 @@ export default function RegisterScreen() {
       }, 100);
     } catch (error) {
       setLoading(false);
-      setError(error.message);
+      const code = error?.code || '';
+      if (code === 'auth/email-already-in-use') {
+        setError('El correo ya está en uso. Intenta iniciar sesión o usa otro correo.');
+        return;
+      }
+      if (code === 'auth/weak-password') {
+        setError('La contraseña es demasiado débil. Asegúrate de cumplir la política de seguridad.');
+        return;
+      }
+      setError(error.message || String(error));
     }
   };
 

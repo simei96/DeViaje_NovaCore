@@ -2,6 +2,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useState, useEffect } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { Calendar } from 'react-native-calendars';
+import { db } from '../../../firebaseConfig';
+import { collection, onSnapshot } from 'firebase/firestore';
 
 const FILTERS = [
 	{ label: 'Todos', color: '#00AEEF', icon: 'checkbox-multiple-blank-outline' },
@@ -18,27 +20,31 @@ export default function CalendarScreen() {
 		const [verTodos, setVerTodos] = useState(false);
 
 		useEffect(() => {
-			import('../../../firebaseConfig').then(({ db }) => {
-				import('firebase/firestore').then(({ collection, onSnapshot }) => {
-					const colRef = collection(db, 'Calendario');
-					const unsub = onSnapshot(colRef, (snap) => {
-						const data = snap.docs.map(d => {
-							const raw = d.data();
-							return {
-								id: d.id,
-								nombre: raw.Nombre || '',
-								descripcion: raw.Descripción || '',
-								tipo: raw.Tipo || 'Cultural',
-								fechaInicio: raw.Fecha?.FechaInicio || '',
-								fechaFin: raw.Fecha?.FechaFin || '',
-							};
-						});
-						setEventos(data);
-						setLoading(false);
+			try {
+				const colRef = collection(db, 'Calendario');
+				const unsub = onSnapshot(colRef, (snap) => {
+					const data = snap.docs.map(d => {
+						const raw = d.data();
+						return {
+							id: d.id,
+							nombre: raw.Nombre || '',
+							descripcion: raw.Descripción || '',
+							tipo: raw.Tipo || 'Cultural',
+							fechaInicio: raw.Fecha?.FechaInicio || '',
+							fechaFin: raw.Fecha?.FechaFin || '',
+						};
 					});
-					return () => unsub();
+					setEventos(data);
+					setLoading(false);
+				}, (err) => {
+					setError(err?.message || String(err));
+					setLoading(false);
 				});
-			});
+				return () => unsub();
+			} catch (err) {
+				setError(err?.message || String(err));
+				setLoading(false);
+			}
 		}, []);
 
 		function parseFecha(fechaStr) {

@@ -13,7 +13,7 @@ export default function HomeScreen() {
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
       headerImage={
         <Image
-          source={require('../assets/images/imagen_de_prueba.jpg')}
+          source={{ uri: 'https://firebasestorage.googleapis.com/v0/b/deviaje-75dbd.appspot.com/o/imagen_de_prueba.jpg?alt=media' }}
           style={styles.reactLogo}
         />
       }>

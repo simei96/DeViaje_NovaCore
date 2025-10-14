@@ -79,7 +79,7 @@ export default function TransportListScreen(){
   const renderOpcion = ({ item }) => (
   <TouchableOpacity onPress={() => router.push({ pathname:'/services/transport/'+item.id })} activeOpacity={0.85} style={styles.transpCard}>
       <View style={{ position:'relative' }}>
-        <Image source={item.imagen ? { uri:item.imagen } : require('../../assets/images/imagen_de_prueba.jpg')} style={styles.transpImg} />
+  <Image source={item.imagen ? { uri:item.imagen } : { uri: 'https://firebasestorage.googleapis.com/v0/b/deviaje-75dbd.appspot.com/o/imagen_de_prueba.jpg?alt=media' }} style={styles.transpImg} />
         <View style={styles.tipoBadge}><Text style={styles.tipoBadgeText}>{item.tipo}</Text></View>
   <Text style={styles.transpPrecio}>{formatCordoba(item.precio)}</Text>
       </View>

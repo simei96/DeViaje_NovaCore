@@ -162,7 +162,7 @@ export default function WelcomeScreen() {
               <Animated.View style={[styles.absoluteFill, { opacity: currentOpacity }, styles.layerBase]} pointerEvents="none">
                 <Animated.View style={{ flex:1, transform:[{ scale: bgZoom.interpolate({ inputRange:[0,1], outputRange:[1,1.02] }) }] }}>
                   <ImageBackground
-                    source={slides[index].imageURL ? { uri: slides[index].imageURL } : require('../../assets/images/imagen_de_prueba.jpg')}
+                    source={slides[index].imageURL ? { uri: slides[index].imageURL } : { uri: 'https://firebasestorage.googleapis.com/v0/b/deviaje-75dbd.appspot.com/o/imagen_de_prueba.jpg?alt=media' }}
                     style={styles.bg}
                     resizeMode="cover"
                     imageStyle={styles.imageFill}
@@ -188,7 +188,7 @@ export default function WelcomeScreen() {
             {nextIndex != null && slides[nextIndex] && (
               <Animated.View style={[styles.absoluteFill, { opacity: nextOpacity }, styles.layerBase]} pointerEvents="none">
                 <ImageBackground
-                  source={slides[nextIndex].imageURL ? { uri: slides[nextIndex].imageURL } : require('../../assets/images/imagen_de_prueba.jpg')}
+                  source={slides[nextIndex].imageURL ? { uri: slides[nextIndex].imageURL } : { uri: 'https://firebasestorage.googleapis.com/v0/b/deviaje-75dbd.appspot.com/o/imagen_de_prueba.jpg?alt=media' }}
                   style={styles.bg}
                   resizeMode="cover"
                   imageStyle={styles.imageFill}

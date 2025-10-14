@@ -78,7 +78,7 @@ export default function HotelDetailScreen(){
         <ScrollView contentContainerStyle={{ paddingBottom:40 }}>
           {/* Hero */}
           <View style={styles.heroWrapper}>
-            <Image source={imagenPrincipal ? { uri: imagenPrincipal } : require('../../assets/images/imagen_de_prueba.jpg')} style={styles.heroImg} />
+            <Image source={imagenPrincipal ? { uri: imagenPrincipal } : { uri: 'https://firebasestorage.googleapis.com/v0/b/deviaje-75dbd.appspot.com/o/imagen_de_prueba.jpg?alt=media' }} style={styles.heroImg} />
             <View style={styles.heroOverlay} />
             <View style={styles.topBar}>
               <TouchableOpacity style={styles.roundBtn} onPress={() => router.back()}><MaterialCommunityIcons name="arrow-left" size={20} color="#fff" /></TouchableOpacity>

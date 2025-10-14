@@ -293,6 +293,10 @@ useEffect(() => {
 							<MaterialCommunityIcons name="bus" size={20} color="#283593" style={styles.buscasBtnIcon} />
 							<Text style={styles.buscasBtnText}>Transporte</Text>
 						</TouchableOpacity>
+						<TouchableOpacity style={styles.buscasBtn} activeOpacity={0.85} onPress={() => router.push('/services/crafts')}>
+							<MaterialCommunityIcons name="hand-heart" size={20} color="#283593" style={styles.buscasBtnIcon} />
+							<Text style={styles.buscasBtnText}>Artesanías</Text>
+						</TouchableOpacity>
 					</ScrollView>
 
 					{/* Recomendado para ti */}

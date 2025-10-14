@@ -6,6 +6,8 @@ import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
 import React from 'react';
 import { ActivityIndicator, View } from 'react-native';
+import 'react-native-get-random-values';
+import 'react-native-url-polyfill/auto';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 

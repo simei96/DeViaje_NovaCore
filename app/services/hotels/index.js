@@ -66,7 +66,7 @@ export default function HotelsListScreen(){
           {Array.from({ length:3 }).map((_, idx) => {
             const imgs = item.imagenes || [];
             const src = imgs[idx];
-            const source = src ? { uri: src } : require('../../assets/images/imagen_de_prueba.jpg');
+            const source = src ? { uri: src } : { uri: 'https://firebasestorage.googleapis.com/v0/b/deviaje-75dbd.appspot.com/o/imagen_de_prueba.jpg?alt=media' };
             return <Image key={idx} source={source} style={styles.hotelImgSmall} />;
           })}
         </View>

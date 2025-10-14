@@ -3,7 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { FlatList, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { auth, db } from '../../../firebaseConfig';
 
-const RESERVA_IMG = require('../../assets/images/imagen_de_prueba.jpg');
+// Use a remote placeholder image so bundler doesn't need a local asset here
+const RESERVA_IMG = { uri: 'https://via.placeholder.com/800x600.png?text=Reserva' };
 
 const FILTROS = [
   { label: 'Todas', value: 'Todas' },

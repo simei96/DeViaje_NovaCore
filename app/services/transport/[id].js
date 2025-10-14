@@ -76,7 +76,7 @@ export default function TransportDetailScreen(){
         <ScrollView contentContainerStyle={{ paddingBottom:40 }}> 
           {/* Hero */}
           <View style={styles.heroWrapper}>
-            <Image source={data.ImagenURL ? { uri:data.ImagenURL } : require('../../assets/images/imagen_de_prueba.jpg')} style={styles.heroImg} />
+            <Image source={data.ImagenURL ? { uri:data.ImagenURL } : { uri: 'https://firebasestorage.googleapis.com/v0/b/deviaje-75dbd.appspot.com/o/imagen_de_prueba.jpg?alt=media' }} style={styles.heroImg} />
             <View style={styles.heroOverlay} />
             <View style={styles.topBar}>
               <TouchableOpacity style={styles.roundBtn} onPress={() => router.back()}><MaterialCommunityIcons name="arrow-left" size={20} color="#fff" /></TouchableOpacity>

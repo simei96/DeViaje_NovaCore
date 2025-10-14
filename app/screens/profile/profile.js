@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useIsFocused, useNavigation, useRoute } from '@react-navigation/native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
@@ -19,7 +19,17 @@ export default function ProfileScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const route = useRoute();
   const router = useRouter();
+  const params = useLocalSearchParams();
   const returnTo = route.params?.returnTo ? decodeURIComponent(route.params.returnTo) : null;
+  const [showDeletedAlert, setShowDeletedAlert] = useState(false);
+
+  useEffect(() => {
+    if (params?.deleted === '1' && !showDeletedAlert) {
+      setShowDeletedAlert(true);
+      Alert.alert('Cuenta eliminada', 'Tu cuenta fue eliminada. Si deseas crear una nueva, regístrate de nuevo.');
+      try { router.replace('/profile'); } catch (e) { /* ignore */ }
+    }
+  }, [params, showDeletedAlert]);
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
@@ -51,7 +61,20 @@ export default function ProfileScreen() {
         return;
       }
     } catch (error) {
-      alert('Error al iniciar sesión: ' + error.message);
+      const code = error?.code || '';
+      if (code === 'auth/user-not-found') {
+        Alert.alert('Usuario no registrado', 'No encontramos una cuenta con ese correo. Por favor regístrate.');
+        return;
+      }
+      if (code === 'auth/wrong-password') {
+        Alert.alert('Contraseña incorrecta', 'La contraseña ingresada no es correcta.');
+        return;
+      }
+      if (code === 'auth/invalid-email') {
+        Alert.alert('Correo inválido', 'Revisa que el correo tenga un formato válido.');
+        return;
+      }
+      Alert.alert('Error al iniciar sesión', error.message || String(error));
     }
   };
 
