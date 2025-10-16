@@ -9,10 +9,10 @@ import { db } from '../../../firebaseConfig';
 const DEFAULT_HEADER_HEIGHT = 96;
 
 const CATEGORIAS = [
-	{ label: 'Playas', icon: 'beach', color: '#fffbe6' },
-	{ label: 'Volcanes', icon: 'terrain', color: '#fff3e0' },
-	{ label: 'Cascadas', icon: 'waterfall', color: '#eafaf1' },
-	{ label: 'Ríos', icon: 'waves', color: '#e3f2fd' },
+	{ label: 'Playas', icon: 'beach', color: '#fffbe6', slug: 'playas' },
+	{ label: 'Volcanes', icon: 'terrain', color: '#fff3e0', slug: 'volcanes' },
+	{ label: 'Cascadas', icon: 'waterfall', color: '#eafaf1', slug: 'cascadas' },
+	{ label: 'Ríos', icon: 'waves', color: '#e3f2fd', slug: 'rios' },
 ];
 
 export default function Home() {
@@ -261,7 +261,19 @@ useEffect(() => {
 						contentContainerStyle={styles.chipsRow}
 					>
 						{CATEGORIAS.map(cat => (
-							<TouchableOpacity key={cat.label} style={[styles.chip, { backgroundColor: cat.color }]} activeOpacity={0.85}>
+							<TouchableOpacity
+								key={cat.label}
+								style={[styles.chip, { backgroundColor: cat.color }]}
+								activeOpacity={0.85}
+								accessibilityLabel={`Ir a ${cat.label}`}
+								onPress={() => {
+									try {
+										router.push({ pathname: `/experiences/${cat.slug}` });
+									} catch (e) {
+										router.push(`/experiences/${cat.slug}`);
+									}
+								}}
+							>
 								<MaterialCommunityIcons name={cat.icon} size={20} color="#1a237e" style={styles.chipIcon} />
 								<Text style={styles.chipText}>{cat.label}</Text>
 							</TouchableOpacity>
@@ -479,7 +491,6 @@ useEffect(() => {
 										{volcanMasayaPromo?.Descuento ? `-${volcanMasayaPromo.Descuento}%` : 'Volcán'}
 									</Text>
 								</View>
-								{/* Removed validity overlay per request */}
 								<View style={styles.cercaRating}><MaterialCommunityIcons name="star" size={15} color="#FFD700" /><Text style={styles.cercaRatingText}>4.8</Text></View>
 								<View style={{ padding: 12 }}>
 									<Text style={styles.cercaTitle}>Volcán Masaya</Text>

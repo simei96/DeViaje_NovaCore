@@ -1,19 +1,53 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import React, { useMemo, useState, useEffect } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, FlatList } from 'react-native';
 import { useRouter } from 'expo-router';
-import SearchBar from '../../components/SearchBar';
-import ExperienceCard from '../../components/ExperienceCard';
-import FilterBar from '../../components/FilterBar';
-import { collection, onSnapshot, query, where, getDocs } from 'firebase/firestore';
+import { collection, getDocs, onSnapshot, query, where } from 'firebase/firestore';
+import { useEffect, useMemo, useState } from 'react';
+import { FlatList, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { db } from '../../firebaseConfig';
+
+function SearchBar({ value, onChange, placeholder = 'Buscar...', compact = false, containerStyle }) {
+	return (
+		<View style={[{ paddingHorizontal: 12, paddingVertical: compact ? 6 : 12, backgroundColor: 'transparent' }, containerStyle]}>
+			<View style={{ backgroundColor: '#fff', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#e0e0e0' }}>
+				<MaterialCommunityIcons name="magnify" size={18} color="#666" />
+				<TextInput
+					value={value}
+					onChangeText={onChange}
+					placeholder={placeholder}
+					style={{ marginLeft: 8, flex: 1, padding: 0 }}
+					returnKeyType="search"
+				/>
+			</View>
+		</View>
+	);
+}
+
+function FilterBar({ selected, onSelect }) {
+	const options = [
+		{ key: null, label: 'Todos' },
+		{ key: 'free', label: 'Gratis' },
+		{ key: 'price_low', label: 'Precio ↑' },
+		{ key: 'price_high', label: 'Precio ↓' },
+		{ key: 'rating', label: 'Mejor valorados' },
+	];
+	return (
+		<View style={{ paddingVertical: 8 }}>
+			<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, alignItems: 'center' }}>
+				{options.map(opt => (
+					<TouchableOpacity key={String(opt.key)} onPress={() => onSelect(opt.key)} style={{ marginRight: 8, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: selected === opt.key ? '#283593' : '#fff', borderWidth: 1, borderColor: '#e0e0e0' }}>
+						<Text style={{ color: selected === opt.key ? '#fff' : '#222', fontSize: 13 }}>{opt.label}</Text>
+					</TouchableOpacity>
+				))}
+			</ScrollView>
+		</View>
+	);
+}
 
 export default function CascadasScreen(){
 	const router = useRouter();
 	const [searchQuery, setSearchQuery] = useState('');
 	const [filter, setFilter] = useState(null);
 	const [places, setPlaces] = useState([]);
-
 	useEffect(() => {
 		const col = collection(db, 'Lugares');
 		let unsub = null;
@@ -115,14 +149,25 @@ export default function CascadasScreen(){
 			</View>
 
 			<SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Buscar cascada, lugar..." compact containerStyle={{ marginTop: -16 }} />
-			<FilterBar selected={filter} onSelect={setFilter} />
+			<View style={{ marginTop: -2 }}>
+				<FilterBar selected={filter} onSelect={setFilter} />
+			</View>
 
 			<FlatList
 				data={filtered}
 				keyExtractor={i => i.id}
 				contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
 				renderItem={({ item }) => (
-					<ExperienceCard item={item} onPress={onPressItem} onShare={(it)=>{ /* share */ }} />
+					<TouchableOpacity style={styles.cardInline} onPress={() => onPressItem(item)} activeOpacity={0.9}>
+						{item.img ? <Image source={{ uri: item.img }} style={styles.cardInlineImg} /> : null}
+						<View style={{ padding: 12 }}>
+							<Text style={styles.cardInlineTitle}>{item.nombre}</Text>
+							<Text style={styles.cardInlinePlace}>{item.lugar}</Text>
+							<View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
+								<TouchableOpacity style={styles.btnPrimaryInline} onPress={() => onPressItem(item)}><Text style={{ color: '#fff' }}>Ver Detalles</Text></TouchableOpacity>
+							</View>
+						</View>
+					</TouchableOpacity>
 				)}
 			/>
 		</View>
@@ -134,4 +179,11 @@ const styles = StyleSheet.create({
 	headerTitle: { color: '#fff', fontSize: 20, fontWeight: '700' },
 	headerSub: { color: '#fff', fontSize: 12, marginTop: 4 },
 	headerOrangePlaceholder: {},
+
+	/* inline card */
+	cardInline: { backgroundColor: '#fff', borderRadius: 12, marginBottom: 14, overflow: 'hidden', elevation: 2 },
+	cardInlineImg: { width: '100%', height: 160 },
+	cardInlineTitle: { fontWeight: '700', fontSize: 16 },
+	cardInlinePlace: { color: '#666', marginTop: 4 },
+	btnPrimaryInline: { backgroundColor: '#0ba4e0', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
 });

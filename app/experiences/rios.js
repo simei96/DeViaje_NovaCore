@@ -1,11 +1,46 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import React, { useMemo, useState, useEffect } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Image, TextInput } from 'react-native';
-import SearchBar from '../../components/SearchBar';
-import FilterBar from '../../components/FilterBar';
 import { useRouter } from 'expo-router';
-import { collection, onSnapshot, query, where, getDocs } from 'firebase/firestore';
+import { collection, getDocs, onSnapshot, query, where } from 'firebase/firestore';
+import { useEffect, useMemo, useState } from 'react';
+import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { db } from '../../firebaseConfig';
+function SearchBar({ value, onChange, placeholder = 'Buscar...', compact = false, containerStyle }) {
+	return (
+		<View style={[{ paddingHorizontal: 12, paddingVertical: compact ? 6 : 12, backgroundColor: 'transparent' }, containerStyle]}>
+			<View style={{ backgroundColor: '#fff', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#e0e0e0' }}>
+				<MaterialCommunityIcons name="magnify" size={18} color="#666" />
+				<TextInput
+					value={value}
+					onChangeText={onChange}
+					placeholder={placeholder}
+					style={{ marginLeft: 8, flex: 1, padding: 0 }}
+					returnKeyType="search"
+				/>
+			</View>
+		</View>
+	);
+}
+
+function FilterBar({ selected, onSelect }) {
+	const options = [
+		{ key: null, label: 'Todos' },
+		{ key: 'free', label: 'Gratis' },
+		{ key: 'price_low', label: 'Precio ↑' },
+		{ key: 'price_high', label: 'Precio ↓' },
+		{ key: 'rating', label: 'Mejor valorados' },
+	];
+	return (
+		<View style={{ paddingVertical: 8 }}>
+			<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, alignItems: 'center' }}>
+				{options.map(opt => (
+					<TouchableOpacity key={String(opt.key)} onPress={() => onSelect(opt.key)} style={{ marginRight: 8, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: selected === opt.key ? '#283593' : '#fff', borderWidth: 1, borderColor: '#e0e0e0' }}>
+						<Text style={{ color: selected === opt.key ? '#fff' : '#222', fontSize: 13 }}>{opt.label}</Text>
+					</TouchableOpacity>
+				))}
+			</ScrollView>
+		</View>
+	);
+}
 
 
 export default function RiosScreen(){
@@ -118,7 +153,9 @@ export default function RiosScreen(){
 			</View>
 
 			<SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Buscar río, lugar..." compact containerStyle={{ marginTop: -16 }} />
-			<FilterBar selected={filter} onSelect={setFilter} />
+			<View style={{ marginTop: -2 }}>
+				<FilterBar selected={filter} onSelect={setFilter} />
+			</View>
 
 			<ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
 				{filtered.map(item => (
