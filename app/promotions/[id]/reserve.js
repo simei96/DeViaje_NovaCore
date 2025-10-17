@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { addDoc, collection, doc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { auth, db } from '../../../firebaseConfig';
 
 export default function ReservationScreen() {
@@ -138,10 +138,30 @@ export default function ReservationScreen() {
     setServices(parsed);
   }, [promo]);
   useEffect(() => {
-    const servicesTotal = services.filter(s => selectedServices.includes(s.id)).reduce((acc, s) => acc + (s.price || 0), 0);
-    const basePrice = Number(promo?.Precio || promo?.PrecioBase || promo?.Price || 0) || 0;
-    const peopleCount = Math.max(1, adults + children + babies);
-    const itemsTotal = basePrice * peopleCount + servicesTotal;
+    const getPriceFromObj = (obj, keys) => {
+      if (!obj) return 0;
+      for (const k of keys) {
+        if (Object.prototype.hasOwnProperty.call(obj, k) && obj[k] != null) return Number(obj[k]) || 0;
+      }
+      return 0;
+    };
+
+    const servicesTotal = services.filter(s => selectedServices.includes(s.id) || s.selected).reduce((acc, s) => acc + (Number(s.price) || 0), 0);
+
+    let peopleTotal = 0;
+    if (promo && promo.PreciosPersonas) {
+      const pp = promo.PreciosPersonas;
+      const adultPrice = getPriceFromObj(pp, ['Adultos', 'Adulto', 'Adults', 'adultos', 'adulto']);
+      const childPrice = getPriceFromObj(pp, ['Niños', 'Ninos', 'Ni\u00f1os', 'Niño', 'Ninos', 'ninos', 'children', 'child']);
+      const babyPrice = getPriceFromObj(pp, ['Bebes', 'Bebé', 'BebéS', 'Bebes', 'bebes', 'baby']);
+      peopleTotal = (Number(adults) || 0) * adultPrice + (Number(children) || 0) * childPrice + (Number(babies) || 0) * babyPrice;
+    } else {
+      const basePrice = Number(promo?.Precio || promo?.PrecioBase || promo?.Price || 0) || 0;
+      const peopleCount = Math.max(1, adults + children + babies);
+      peopleTotal = basePrice * peopleCount;
+    }
+
+    const itemsTotal = peopleTotal + servicesTotal;
     const computedIva = Math.round(itemsTotal * 0.15 * 100) / 100;
     const computedTotal = Math.round((itemsTotal + computedIva) * 100) / 100;
     setSubtotal(Math.round(itemsTotal * 100) / 100);
@@ -163,11 +183,41 @@ export default function ReservationScreen() {
     return null;
   };
 
+  const formatDateRange = (start, end) => {
+    const s = parseDate(start);
+    const e = parseDate(end);
+    if (s && e) return `${s.toLocaleDateString()} - ${e.toLocaleDateString()}`;
+    if (s) return s.toLocaleDateString();
+    if (e) return e.toLocaleDateString();
+    return '';
+  };
+
+  const formatPricesReadable = (p) => {
+    if (!p) return null;
+    if (typeof p === 'string') return p;
+    if (typeof p === 'object') return Object.entries(p).map(([k,v]) => `${k}: C$ ${v}`).join('\n');
+    return String(p);
+  };
+
   if (loading) return <View style={styles.center}><ActivityIndicator /></View>;
   if (!promo) return <View style={styles.center}><Text>No se encontró la promoción.</Text></View>;
 
   const startDate = parseDate(promo.FechaInicio || promo.FechaDesde || promo.startDate);
   const endDate = parseDate(promo.FechaFin || promo.FechaHasta || promo.endDate);
+  const coords = extractCoords();
+
+  function extractCoords() {
+    if (!promo) return null;
+    if (promo.Coordenadas && (promo.Coordenadas.latitude || promo.Coordenadas._lat || promo.Coordenadas.latitude === 0)) {
+      const lat = promo.Coordenadas.latitude || promo.Coordenadas._lat || (promo.Coordenadas.latitude === 0 ? 0 : null);
+      const lng = promo.Coordenadas.longitude || promo.Coordenadas._long || promo.Coordenadas.longitude === 0 ? promo.Coordenadas.longitude : (promo.Coordenadas._long || null);
+      return { lat, lng };
+    }
+    const lat = promo.Latitud || promo.lat || promo.latitude || null;
+    const lng = promo.Longitud || promo.lng || promo.longitude || null;
+    if (lat && lng) return { lat, lng };
+    return null;
+  };
 
   const ensureLoggedIn = () => {
     const user = auth.currentUser;
@@ -213,6 +263,9 @@ export default function ReservationScreen() {
         people: { adults, children, babies },
         services: services.filter(s => selectedServices.includes(s.id)).map(s => ({ id: s.id, title: s.title, price: s.price })),
         priceSummary: { subtotal, iva, total },
+        paqueteId: promo.PaqueteID || null,
+        preciosPersonas: promo.PreciosPersonas || null,
+        coordenadas: coords || null,
         status: 'pending',
         createdAt: serverTimestamp(),
       });
@@ -240,6 +293,26 @@ export default function ReservationScreen() {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={[styles.title, { marginBottom: 6 }]}>{promo.Titulo || promo.Nombre}</Text>
       <Text style={{ color: '#666', marginBottom: 12 }}>{promo.DescripcionCorta || promo.Descripcion || ''}</Text>
+
+      {/* Resumen de la promoción (datos de promo_002) */}
+      <View style={{ padding: 12, borderRadius: 10, backgroundColor: '#fff', borderWidth: 1, borderColor: '#eee', marginBottom: 12 }}>
+        {promo.ImagenURL || promo.Imagen || promo.ImageURL ? (
+          <Image source={{ uri: promo.ImagenURL || promo.Imagen || promo.ImageURL }} style={{ width: '100%', height: 140, borderRadius: 8, marginBottom: 8 }} resizeMode="cover" />
+        ) : null}
+        {promo.Descuento ? <Text style={{ fontWeight: '700', marginBottom: 6 }}>{`Descuento: ${promo.Descuento}`}</Text> : null}
+        {(promo.FechaInicio || promo.FechaFin) ? <Text style={{ color: '#666', marginBottom: 6 }}>{formatDateRange(promo.FechaInicio, promo.FechaFin)}</Text> : null}
+        {promo.GrupoPersonas ? <Text style={{ marginBottom: 6 }}>Grupo: {String(promo.GrupoPersonas)}</Text> : null}
+        {(promo.HorariosSalida || promo.Horario || promo.Horarios) ? <Text style={{ marginBottom: 6 }}>Horarios: {String(promo.HorariosSalida || promo.Horario || promo.Horarios)}</Text> : null}
+        {Array.isArray(promo.Incluye) && promo.Incluye.length > 0 ? (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+            {promo.Incluye.map((inc, idx) => (
+              <View key={idx} style={{ paddingVertical: 6, paddingHorizontal: 8, backgroundColor: '#f3f6ff', borderRadius: 6, marginRight: 6, marginBottom: 6 }}>
+                <Text style={{ fontSize: 12 }}>{String(inc)}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </View>
 
       <Text style={styles.label}>Nombre</Text>
       <TextInput style={styles.input} value={firstName} onChangeText={setFirstName} />
@@ -290,21 +363,6 @@ export default function ReservationScreen() {
         <Text style={styles.totalPersonsLabel}>Total personas:</Text>
         <View style={styles.totalBadge}><Text style={styles.totalBadgeText}>{(adults + children + babies)} {(adults + children + babies) === 1 ? 'persona' : 'personas'}</Text></View>
       </View>
-
-      <Text style={styles.sectionTitle}>Servicios</Text>
-      {services.length === 0 ? <Text style={{ color: '#888', marginBottom: 8 }}>No hay servicios adicionales.</Text> : (
-        services.map(s => (
-          <TouchableOpacity key={s.id} onPress={() => {
-            setSelectedServices(prev => prev.includes(s.id) ? prev.filter(x => x !== s.id) : [...prev, s.id]);
-          }} style={{ padding: 12, borderRadius: 10, backgroundColor: selectedServices.includes(s.id) ? '#e8f0ff' : '#f9fafb', marginBottom: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <View>
-              <Text style={{ fontWeight: '700' }}>{s.title}</Text>
-              <Text style={{ color: '#666', fontSize: 13 }}>{s.description || ''}</Text>
-            </View>
-            <Text style={{ fontWeight: '700' }}>C$ {s.price}</Text>
-          </TouchableOpacity>
-        ))
-      )}
 
       <View style={{ padding: 12, borderRadius: 10, backgroundColor: '#fff', borderWidth: 1, borderColor: '#eee', marginBottom: 12 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>

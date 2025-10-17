@@ -1,10 +1,11 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { onAuthStateChanged } from 'firebase/auth';
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Animated, Dimensions, Image, Linking, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import SkeletonLoader from '../../../components/ui/SkeletonLoader';
-import { db } from '../../../firebaseConfig';
+import { auth, db } from '../../../firebaseConfig';
 
 const DEFAULT_HEADER_HEIGHT = 96;
 
@@ -15,15 +16,91 @@ const CATEGORIAS = [
 	{ label: 'Ríos', icon: 'waves', color: '#e3f2fd', slug: 'rios' },
 ];
 
+function formatDateRange(start, end) {
+	try {
+		const s = start ? (start.toDate ? start.toDate() : new Date(start)) : null;
+		const e = end ? (end.toDate ? end.toDate() : new Date(end)) : null;
+		if (s && e) {
+			const opts = { day: '2-digit', month: 'short' };
+			return `${s.toLocaleDateString(undefined, opts)} - ${e.toLocaleDateString(undefined, opts)}`;
+		}
+		if (s) return s.toLocaleDateString();
+		if (e) return e.toLocaleDateString();
+		return '';
+	} catch (err) {
+		return '';
+	}
+}
+
+function formatExtraValue(val) {
+	try {
+		if (val === null || typeof val === 'undefined') return '';
+		if (Array.isArray(val)) return val.join(', ');
+		if (val && typeof val.toDate === 'function') return new Date(val.toDate()).toLocaleString();
+		if (typeof val === 'object') return JSON.stringify(val);
+		return String(val);
+	} catch (err) {
+		return '';
+	}
+}
+
+function formatPricesReadable(p) {
+	if (!p) return null;
+	if (typeof p === 'string') return p;
+	if (typeof p === 'object') return Object.entries(p).map(([k,v]) => `${k}: C$ ${v}`).join('\n');
+	return String(p);
+}
+
+function extractPlaceCoords(place) {
+	if (!place) return null;
+	if (place.Coordenadas && (place.Coordenadas.latitude || place.Coordenadas._lat || place.Coordenadas.latitude === 0)) {
+		const lat = place.Coordenadas.latitude || place.Coordenadas._lat || (place.Coordenadas.latitude === 0 ? 0 : null);
+		const lng = place.Coordenadas.longitude || place.Coordenadas._long || place.Coordenadas.longitude === 0 ? place.Coordenadas.longitude : (place.Coordenadas._long || null);
+		if (lat != null && lng != null) return { lat, lng };
+	}
+	if (Array.isArray(place.Ubicacion) && place.Ubicacion.length >= 2) {
+		const maybeLat = parseFloat(String(place.Ubicacion[0]).replace(/[^0-9\-\.]/g, ''));
+		const maybeLng = parseFloat(String(place.Ubicacion[1]).replace(/[^0-9\-\.]/g, ''));
+		if (!isNaN(maybeLat) && !isNaN(maybeLng)) return { lat: maybeLat, lng: maybeLng };
+	}
+	if (place.Ubicacion && typeof place.Ubicacion === 'object' && (place.Ubicacion.lat || place.Ubicacion.latitude)) {
+		const lat = place.Ubicacion.lat || place.Ubicacion.latitude;
+		const lng = place.Ubicacion.lng || place.Ubicacion.longitude;
+		if (lat != null && lng != null) return { lat, lng };
+	}
+	if (typeof place.Ubicacion === 'string') {
+		const nums = place.Ubicacion.match(/-?\d+\.?\d*/g);
+		if (nums && nums.length >= 2) return { lat: parseFloat(nums[0]), lng: parseFloat(nums[1]) };
+	}
+	return null;
+}
+
+function openPlaceInMaps(place) {
+	const c = extractPlaceCoords(place);
+	if (!c) return false;
+	const lat = c.lat;
+	const lng = c.lng;
+	const url = Platform.OS === 'ios' ? `http://maps.apple.com/?ll=${lat},${lng}` : `geo:${lat},${lng}?q=${lat},${lng}`;
+	Linking.openURL(url).catch(e => console.warn('Could not open maps', e));
+	return true;
+}
+
 export default function Home() {
 	const router = useRouter();
+	const [user, setUser] = useState(auth.currentUser || null);
 	const [logoUrl, setLogoUrl] = useState(null);
-	const [promoHotel, setPromoHotel] = useState(null);
+	const [promoPlaya, setPromoPlaya] = useState(null);
+	const [promoPlaya2, setPromoPlaya2] = useState(null);
 	const [promoTour, setPromoTour] = useState(null);
 	const [promoIsla, setPromoIsla] = useState(null);
 	const [volcanMasayaCard, setVolcanMasayaCard] = useState(null); 
 	const [volcanMasayaPromo, setVolcanMasayaPromo] = useState(null); 
 	const [loading, setLoading] = useState(true);
+	const [nearbyPlaces, setNearbyPlaces] = useState([]);
+	const [recommendedPlaces, setRecommendedPlaces] = useState([]);
+	const [loadingRecommended, setLoadingRecommended] = useState(false);
+	const [detailModalVisible, setDetailModalVisible] = useState(false);
+	const [selectedPlace, setSelectedPlace] = useState(null);
 	const [carouselIndex, setCarouselIndex] = useState(0);
 	const [slidesLoaded, setSlidesLoaded] = useState([]);
 	const [hotelLoaded, setHotelLoaded] = useState(false);
@@ -59,13 +136,25 @@ export default function Home() {
 				const logoSnap = await getDoc(logoRef);
 				if (logoSnap.exists()) setLogoUrl(logoSnap.data().ImagenURL);
 
-				const promoHotelRef = doc(db, 'Promociones', 'Promo_002');
-				const promoHotelSnap = await getDoc(promoHotelRef);
-				if (promoHotelSnap.exists()) setPromoHotel(promoHotelSnap.data());
+				const promoPlayaRef = doc(db, 'Promociones', 'Promo_002');
+				const promoPlayaSnap = await getDoc(promoPlayaRef);
+				if (promoPlayaSnap.exists()) setPromoPlaya(promoPlayaSnap.data());
 
 				const promoIslaRef = doc(db, 'Promociones', 'Promo_004');
 				const promoIslaSnap = await getDoc(promoIslaRef);
 				if (promoIslaSnap.exists()) setPromoIsla(promoIslaSnap.data());
+
+				try {
+					const lugar1Ref = doc(db, 'Lugares', 'Lugar_001');
+					const lugar1Snap = await getDoc(lugar1Ref);
+					const lugar2Ref = doc(db, 'Lugares', 'Lugar_002');
+					const lugar2Snap = await getDoc(lugar2Ref);
+					const places = [];
+					if (lugar1Snap.exists()) places.push({ id: 'Lugar_001', ...lugar1Snap.data() });
+					if (lugar2Snap.exists()) places.push({ id: 'Lugar_002', ...lugar2Snap.data() });
+					setNearbyPlaces(places);
+				} catch (e) {
+				}
 
 				const promocionesRef = collection(db, 'Promociones');
 				const volcanQuery = query(promocionesRef, where('Nombre', '==', 'Volcán Masaya'));
@@ -104,6 +193,7 @@ export default function Home() {
 		};
 		fetchAll();
 
+
 		const interval = setInterval(() => {
 			Animated.sequence([
 				Animated.timing(fadeAnim, { toValue: 0, duration: 350, useNativeDriver: true }),
@@ -111,10 +201,85 @@ export default function Home() {
 			]).start();
 			setCarouselIndex(prev => (prev + 1) % carouselData.length);
 		}, 3500);
-		return () => clearInterval(interval);
+		return () => { clearInterval(interval); };
 	}, [fadeAnim]);
 
+	useEffect(() => {
+		if (!user) {
+			setRecommendedPlaces([]);
+			return;
+		}
+		let cancelled = false;
+		const loadRecommendations = async () => {
+			setLoadingRecommended(true);
+			try {
+				const userRef = doc(db, 'users', user.uid);
+				const userSnap = await getDoc(userRef);
+				const intereses = userSnap.exists() ? (userSnap.data().intereses || []) : [];
+				if (!intereses || intereses.length === 0) {
+					setRecommendedPlaces([]);
+					setLoadingRecommended(false);
+					return;
+				}
+				const categorias = intereses.slice(0, 10);
+				const lugaresRef = collection(db, 'Lugares');
+				const q = query(lugaresRef, where('Categoria', 'in', categorias));
+				const snap = await getDocs(q);
+				if (cancelled) return;
+				const results = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+				setRecommendedPlaces(results);
+			} catch (e) {
+				console.warn('Error loading personalized recommendations', e);
+				setRecommendedPlaces([]);
+			} finally {
+				setLoadingRecommended(false);
+			}
+		};
+		loadRecommendations();
+		return () => { cancelled = true; };
+	}, [user]);
+
+	useEffect(() => {
+		const unsub = onAuthStateChanged(auth, u => setUser(u));
+		return () => unsub && unsub();
+	}, []);
+
 	const current = carouselData[carouselIndex];
+
+	const STATIC_RECOMMENDED = [
+		{
+			nombre: 'Playa Maderas',
+			imagen: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80',
+			categoria: 'Playa',
+			icon: 'beach',
+			rating: 4.7,
+			destino: '/destinos/playa-maderas',
+		},
+		{
+			nombre: 'Laguna de Apoyo',
+			imagen: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=600&q=80',
+			categoria: 'Laguna',
+			icon: 'water',
+			rating: 4.8,
+			destino: '/destinos/laguna-apoyo',
+		},
+		{
+			nombre: 'Volcán Masaya',
+			imagen: 'https://images.unsplash.com/photo-1491553895911-0055eca6402d?auto=format&fit=crop&w=600&q=80',
+			categoria: 'Volcán',
+			icon: 'terrain',
+			rating: 4.9,
+			destino: '/destinos/volcan-masaya',
+		},
+		{
+			nombre: 'Isla de Ometepe',
+			imagen: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80',
+			categoria: 'Isla',
+			icon: 'island',
+			rating: 4.8,
+			destino: '/destinos/ometepe',
+		},
+	];
 
 	useEffect(() => {
 		setSlidesLoaded(prev => (prev.length === carouselData.length ? prev : Array(carouselData.length).fill(false)));
@@ -311,209 +476,212 @@ useEffect(() => {
 						</TouchableOpacity>
 					</ScrollView>
 
-					{/* Recomendado para ti */}
-					<View style={{ marginTop: 28, marginBottom: 16, paddingHorizontal: 0 }}>
-						<Text style={{ fontSize: 19, fontWeight: 'bold', color: '#1976d2', alignSelf: 'center', textAlign: 'center', marginBottom: 2 }}>
-							Recomendado para ti
-						</Text>
-							<Text style={{ fontSize: 13, color: '#888', alignSelf: 'center', textAlign: 'center', marginBottom: 10 }}>
-								Descubre lugares increíbles en Managua
+					{/* Recomendado para ti (solo para usuarios autenticados) */}
+					{user ? (
+						<View style={{ marginTop: 28, marginBottom: 16, paddingHorizontal: 0 }}>
+							<Text style={{ fontSize: 19, fontWeight: 'bold', color: '#1976d2', alignSelf: 'center', textAlign: 'center', marginBottom: 2 }}>
+								Recomendado para ti
 							</Text>
-						<View style={styles.recommendedGrid}>
-							{[{
-								nombre: 'Playa Maderas',
-								imagen: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80',
-								categoria: 'Playa',
-								icon: 'beach',
-								rating: 4.7,
-								destino: '/destinos/playa-maderas',
-							}, {
-								nombre: 'Laguna de Apoyo',
-								imagen: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=600&q=80',
-								categoria: 'Laguna',
-								icon: 'water',
-								rating: 4.8,
-								destino: '/destinos/laguna-apoyo',
-							}, {
-								nombre: 'Volcán Masaya',
-								imagen: 'https://images.unsplash.com/photo-1491553895911-0055eca6402d?auto=format&fit=crop&w=600&q=80',
-								categoria: 'Volcán',
-								icon: 'terrain',
-								rating: 4.9,
-								destino: '/destinos/volcan-masaya',
-							}, {
-								nombre: 'Isla de Ometepe',
-								imagen: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80',
-								categoria: 'Isla',
-								icon: 'island',
-								rating: 4.8,
-								destino: '/destinos/ometepe',
-							}, {
-							nombre: 'Laguna de Xiloa',
-							imagen: 'https://images.unsplash.com/photo-1504198453319-5ce911bafcde?auto=format&fit=crop&w=600&q=80',
-							categoria: 'Laguna',
-							icon: 'water',
-							rating: 4.4,
-							destino: '/destinos/xiloa',
-						}, {
-							nombre: 'Mirador de Catarina',
-							imagen: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=600&q=80',
-							categoria: 'Mirador',
-							icon: 'eye',
-							rating: 4.7,
-							destino: '/destinos/catarina',
-						}, {
-							nombre: 'Reserva El Jaguar',
-							imagen: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=600&q=80',
-							categoria: 'Reserva',
-							icon: 'paw',
-							rating: 4.6,
-							destino: '/destinos/el-jaguar',
-						}, {
-							nombre: 'Bosawás',
-							imagen: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&q=80',
-							categoria: 'Bosque',
-							icon: 'forest',
-							rating: 4.6,
-							destino: '/destinos/bosawas',
-						}, {
-							nombre: 'Granada Centro',
-							imagen: 'https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=600&q=80',
-							categoria: 'Ciudad',
-							icon: 'city',
-							rating: 4.5,
-							destino: '/destinos/granada',
-						}].map((item, idx) => (
-								<TouchableOpacity
-									key={item.nombre}
-									style={[styles.recommendedCard, { width: recCardWidth, height: recCardWidth }]}
-									activeOpacity={0.9}
-									onPress={() => router.push(item.destino)}
-								>
-									<View style={styles.recommendedImgWrap}>
-										<Image source={{ uri: item.imagen }} style={styles.recommendedImg} resizeMode="cover" />
-										<View style={styles.recommendedOverlay} />
-										<Text style={styles.recommendedTitle} numberOfLines={1}>{item.nombre}</Text>
-									</View>
-								</TouchableOpacity>
-							))}
+								<Text style={{ fontSize: 13, color: '#888', alignSelf: 'center', textAlign: 'center', marginBottom: 10 }}>
+									Descubre lugares increíbles en Managua
+								</Text>
+							<View style={styles.recommendedGrid}>
+								{(recommendedPlaces && recommendedPlaces.length > 0 ? recommendedPlaces : STATIC_RECOMMENDED).map((item, idx) => {
+									const img = item.ImagenURL || item.imagen || item.Imagen || item.image;
+									const title = item.Nombre || item.nombre || item.titulo || item.title;
+									const destino = item.destino || (`/destinos/${(title || '').toLowerCase().replace(/\s+/g,'-')}`);
+									return (
+										<TouchableOpacity
+											key={item.id || idx || title}
+											style={[styles.recommendedCard, { width: recCardWidth, height: recCardWidth }]}
+											activeOpacity={0.9}
+											onPress={() => router.push(destino)}
+										>
+											<View style={styles.recommendedImgWrap}>
+												{img ? <Image source={{ uri: img }} style={styles.recommendedImg} resizeMode="cover" /> : null}
+												<View style={styles.recommendedOverlay} />
+												<Text style={styles.recommendedTitle} numberOfLines={1}>{title}</Text>
+											</View>
+										</TouchableOpacity>
+									);
+								})}
+							</View>
 						</View>
-						{/* Card de registro */}
-						<View style={{ backgroundColor: '#f6fafd', borderRadius: 16, marginTop: 16, marginHorizontal: 12, padding: 16, borderWidth: 1, borderColor: '#e0e3ea', flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } }}>
+					) : (
+						<View style={{ backgroundColor: '#f6fafd', borderRadius: 16, marginTop: 16, marginHorizontal: 12, padding: 16, borderWidth: 1, borderColor: '#e0e3ea', flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, justifyContent: 'center' }}>
 							<MaterialCommunityIcons name="account-plus" size={22} color="#1976d2" style={{ marginRight: 10 }} />
 							<View>
 								<Text style={{ color: '#1976d2', fontWeight: 'bold', fontSize: 13 }}>Regístrate</Text>
 								<Text style={{ color: '#888', fontSize: 12, marginTop: 2 }}>para obtener recomendaciones personalizadas según tus gustos</Text>
 							</View>
 						</View>
-					</View>
+					)}
 
 					{/* Promociones Especiales */}
 					<Text style={{ color: '#283593', fontWeight: 'bold', fontSize: 15, textAlign: 'center', marginTop: 18 }}>Promociones Especiales</Text>
 					<Text style={{ color: '#888', fontSize: 13, textAlign: 'center', marginBottom: 10 }}>Aprovecha estas ofertas limitadas y ahorra en tus experiencias</Text>
 					<View style={{ gap: 18 }}>
-						{/* Card Hotel */}
+						{/* Card (datos desde Firestore: Promo_002) */}
 						<TouchableOpacity activeOpacity={0.9} onPress={() => router.push('/promotions/Promo_002')}>
 							<View style={{ backgroundColor: '#fff', borderRadius: 16, marginHorizontal: 8, elevation: 3, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, borderWidth: 1, borderColor: '#e0e3ea' }}>
-								<Image source={promoHotel?.ImageURL ? { uri: promoHotel.ImageURL } : undefined} style={{ width: '100%', height: 140, borderTopLeftRadius: 16, borderTopRightRadius: 16, backgroundColor:'#eceff1' }} resizeMode="cover" />
+								<Image source={promoPlaya?.ImagenURL || promoPlaya?.ImageURL || promoPlaya?.Imagen ? { uri: promoPlaya.ImagenURL || promoPlaya.ImageURL || promoPlaya.Imagen } : undefined} style={{ width: '100%', height: 140, borderTopLeftRadius: 16, borderTopRightRadius: 16, backgroundColor:'#eceff1' }} resizeMode="cover" />
+								{/* Top-left type badge */}
 								<View style={{ position: 'absolute', top: 14, left: 14, backgroundColor: '#e53935', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 }}>
-									<Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>Hotel</Text>
+									<Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>{promoPlaya?.Tipo || 'Hotel'}</Text>
 								</View>
-								<View style={{ position: 'absolute', top: 120, alignSelf: 'center', backgroundColor: '#263238', borderRadius: 16, opacity: 0.95, paddingHorizontal: 18, paddingVertical: 5, alignItems: 'center', flexDirection: 'row', minWidth: 160, justifyContent: 'center', zIndex: 2 }}>
-									<MaterialCommunityIcons name="shield-check" size={15} color="#fff" style={{ marginRight: 6 }} />
-									<Text style={{ color: '#fff', fontSize: 12 }}>Válido hasta 2025-02-15</Text>
-								</View>
-								<View style={{ padding: 16 }}>
-									<Text style={{ fontWeight: 'bold', color: '#283593', fontSize: 15, marginBottom: 10, marginTop: 8 }}>Hotel Colonial Granada</Text>
-									<View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
-										<MaterialCommunityIcons name="map-marker" size={14} color="#888" />
-										<Text style={{ color: '#888', fontSize: 13, marginLeft: 2 }}>Granada</Text>
-										<MaterialCommunityIcons name="star" size={14} color="#FFD700" style={{ marginLeft: 8 }} />
-										<Text style={{ color: '#444', fontWeight: 'bold', fontSize: 13, marginLeft: 2 }}>4.8</Text>
+								{/* Top-right discount badge (if exists) */}
+								{promoPlaya?.Descuento ? (
+									<View style={{ position: 'absolute', top: 14, right: 14, backgroundColor: '#ff7043', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
+										<Text style={{ color: '#fff', fontWeight: '700' }}>{`-${promoPlaya.Descuento}%`}</Text>
 									</View>
-									<Text style={{ color: '#888', fontSize: 13 }}>Habitación doble con desayuno incluido</Text>
-									<View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 2 }}>
-										<Text style={{ color: '#283593', fontWeight: 'bold', fontSize: 16 }}>C$ 3200</Text>
-										<Text style={{ color: '#888', fontSize: 13, textDecorationLine: 'line-through', marginLeft: 6 }}>C$ 4500</Text>
-										<Text style={{ color: '#888', fontSize: 11, marginLeft: 6 }}>Por noche</Text>
+								) : null}
+
+								{/* Validity / date range */}
+								{(promoPlaya?.FechaInicio || promoPlaya?.FechaFin) && (
+									<View style={{ position: 'absolute', top: 120, alignSelf: 'center', backgroundColor: '#263238', borderRadius: 16, opacity: 0.95, paddingHorizontal: 12, paddingVertical: 6, alignItems: 'center', flexDirection: 'row', minWidth: 160, justifyContent: 'center', zIndex: 2 }}>
+										<MaterialCommunityIcons name="calendar" size={14} color="#fff" style={{ marginRight: 6 }} />
+										<Text style={{ color: '#fff', fontSize: 12 }}>{formatDateRange(promoPlaya?.FechaInicio, promoPlaya?.FechaFin)}</Text>
+									</View>
+								)}
+
+								<View style={{ padding: 16 }}>
+									<Text style={{ fontWeight: 'bold', color: '#283593', fontSize: 15, marginBottom: 8, marginTop: 6 }}>{promoPlaya?.Titulo || promoPlaya?.Nombre || 'Promoción'}</Text>
+									{/* Location / rating row (if provided) */}
+									{promoPlaya?.Ubicacion ? (
+										<View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+											<MaterialCommunityIcons name="map-marker" size={14} color="#888" />
+											<Text style={{ color: '#888', fontSize: 13, marginLeft: 6 }}>{promoPlaya.Ubicacion}</Text>
+										</View>
+									) : null}
+
+									{/* Short info: GrupoPersonas and HorariosSalida */}
+									<View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
+										{promoPlaya?.GrupoPersonas ? (
+											<View style={{ backgroundColor: '#eef7ff', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, marginRight: 8 }}>
+												<Text style={{ color: '#1976d2', fontSize: 12 }}>{promoPlaya.GrupoPersonas}</Text>
+											</View>
+										) : null}
+										{promoPlaya?.HorariosSalida ? (
+											<View style={{ backgroundColor: '#eef7ff', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+												<Text style={{ color: '#1976d2', fontSize: 12 }}>{promoPlaya.HorariosSalida}</Text>
+											</View>
+										) : null}
+									</View>
+
+									{/* Includes list */}
+									{Array.isArray(promoPlaya?.Incluye) && promoPlaya.Incluye.length > 0 ? (
+										<View style={{ marginTop: 8 }}>
+											<Text style={{ fontSize: 13, fontWeight: '700', color: '#444', marginBottom: 6 }}>Incluye</Text>
+											<View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+												{promoPlaya.Incluye.map((it, i) => (
+													<View key={i} style={{ backgroundColor: '#f1f8e9', paddingHorizontal: 8, paddingVertical: 6, borderRadius: 12, marginRight: 6, marginBottom: 6 }}>
+														<Text style={{ color: '#33691e', fontSize: 12 }}>{it}</Text>
+													</View>
+												))}
+											</View>
+										</View>
+									) : null}
+
+
+
+									{/* CTA */}
+									<View style={{ marginTop: 12, alignItems: 'center' }}>
+										<TouchableOpacity style={{ backgroundColor: '#008CBF', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 8 }} onPress={() => router.push('/promotions/Promo_002')}>
+											<Text style={{ color: '#fff', fontWeight: '700' }}>Ver detalle</Text>
+										</TouchableOpacity>
 									</View>
 								</View>
 							</View>
 						</TouchableOpacity>
-						{/* Card Tour */}
-						<TouchableOpacity activeOpacity={0.9} onPress={() => router.push('/promotions/Promo_003')}>
-							<View style={{ backgroundColor: '#fff', borderRadius: 16, marginHorizontal: 8, elevation: 3, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, borderWidth: 1, borderColor: '#e0e3ea' }}>
-								<Image source={promoTour?.ImagenURL ? { uri: promoTour.ImagenURL } : undefined} style={{ width: '100%', height: 140, borderTopLeftRadius: 16, borderTopRightRadius: 16, backgroundColor:'#eceff1' }} resizeMode="cover" />
-								<View style={{ position: 'absolute', top: 14, left: 14, backgroundColor: '#ffa000', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 }}>
-									<Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>Tour</Text>
-								</View>
-								<View style={{ position: 'absolute', top: 120, alignSelf: 'center', backgroundColor: '#263238', borderRadius: 16, opacity: 0.95, paddingHorizontal: 18, paddingVertical: 5, alignItems: 'center', flexDirection: 'row', minWidth: 160, justifyContent: 'center', zIndex: 2 }}>
-									<MaterialCommunityIcons name="shield-check" size={15} color="#fff" style={{ marginRight: 6 }} />
-									<Text style={{ color: '#fff', fontSize: 12 }}>Válido hasta 2025-01-31</Text>
-								</View>
-								<View style={{ padding: 16 }}>
-									<Text style={{ fontWeight: 'bold', color: '#283593', fontSize: 15, marginBottom: 10, marginTop: 8 }}>Tour Volcán Masaya</Text>
-									<View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
-										<MaterialCommunityIcons name="map-marker" size={14} color="#888" />
-										<Text style={{ color: '#888', fontSize: 13, marginLeft: 2 }}>Masaya</Text>
-										<MaterialCommunityIcons name="star" size={14} color="#FFD700" style={{ marginLeft: 8 }} />
-										<Text style={{ color: '#444', fontWeight: 'bold', fontSize: 13, marginLeft: 2 }}>4.9</Text>
-									</View>
-									<Text style={{ color: '#888', fontSize: 13 }}>Tour nocturno con cena incluida</Text>
-									<View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 2 }}>
-										<Text style={{ color: '#283593', fontWeight: 'bold', fontSize: 16 }}>C$ 1990</Text>
-										<Text style={{ color: '#888', fontSize: 13, textDecorationLine: 'line-through', marginLeft: 6 }}>C$ 2800</Text>
-										<Text style={{ color: '#888', fontSize: 11, marginLeft: 6 }}>Por noche</Text>
-									</View>
-								</View>
-							</View>
-						</TouchableOpacity>
+
 					</View>
 
 					{/* Cerca de ti */}
 					<View style={{ marginTop: 18, alignItems: 'center' }}>
 						<Text style={[styles.sectionTitle, { textAlign: 'center', marginTop: 0 }]}>Cerca de ti</Text>
 						<View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 }}>
-							<View style={[styles.cercaCard, { width: 170 }]}> 
-								<Image
-									source={
-										volcanMasayaPromo?.ImagenURL || volcanMasayaPromo?.ImageURL
-											? { uri: volcanMasayaPromo.ImagenURL || volcanMasayaPromo.ImageURL }
-											: volcanMasayaCard?.ImagenURL || volcanMasayaCard?.ImageURL
-											? { uri: volcanMasayaCard.ImagenURL || volcanMasayaCard.ImageURL }
-											: undefined
-									}
-									style={[styles.cercaImg, { width: 170, height: 100 }]}
-									resizeMode="cover"
-								/>
-								<View style={styles.cercaBadge}>
-									<Text style={styles.cercaBadgeText}>
-										{volcanMasayaPromo?.Descuento ? `-${volcanMasayaPromo.Descuento}%` : 'Volcán'}
-									</Text>
-								</View>
-								<View style={styles.cercaRating}><MaterialCommunityIcons name="star" size={15} color="#FFD700" /><Text style={styles.cercaRatingText}>4.8</Text></View>
-								<View style={{ padding: 12 }}>
-									<Text style={styles.cercaTitle}>Volcán Masaya</Text>
-									<View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
-										<Text style={styles.cercaLoc}>Masaya</Text>
-										<Text style={[styles.cercaLoc, { marginLeft: 12 }]}>4-6 horas</Text>
+							{[0,1].map(i => {
+								const place = nearbyPlaces[i] || (i===0 ? (volcanMasayaPromo || volcanMasayaCard) : promoIsla);
+								const img = place?.ImagenURL || place?.Imagen || place?.ImageURL;
+								return (
+									<View key={i} style={[styles.cercaCard, { width: 170 }]}> 
+										<TouchableOpacity activeOpacity={0.85} onPress={() => { setSelectedPlace(place); setDetailModalVisible(true); }}>
+											<Image source={img ? { uri: img } : undefined} style={[styles.cercaImg, { width: 170, height: 100, backgroundColor: img ? undefined : '#eceff1' }]} resizeMode="cover" />
+											<View style={[styles.cercaBadge, { backgroundColor: place?.Categoria ? '#26c6da' : (i===0 ? '#ff8a65' : '#26c6da') }]}><Text style={styles.cercaBadgeText}>{place?.Categoria || (i===0 ? 'Volcán' : 'Isla')}</Text></View>
+											<View style={styles.cercaRating}><MaterialCommunityIcons name="star" size={15} color="#FFD700" /><Text style={styles.cercaRatingText}>{place?.Rating || (i===0 ? 4.8 : 4.9)}</Text></View>
+											<View style={{ padding: 12 }}>
+												<Text style={styles.cercaTitle}>{place?.Nombre || (i===0 ? 'Volcán Masaya' : 'Isla de Ometepe')}</Text>
+												<View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+													<Text style={styles.cercaLoc}>{place?.Ciudad || (i===0 ? 'Masaya' : 'Rivas')}</Text>
+													<Text style={[styles.cercaLoc, { marginLeft: 12 }]}>{place?.Duracion || (i===0 ? '4-6 horas' : '2-3 días')}</Text>
+												</View>
+											</View>
+										</TouchableOpacity>
+										<View style={{ flexDirection: 'row', justifyContent: 'flex-start', paddingHorizontal: 12, paddingBottom: 12 }}>
+											<TouchableOpacity onPress={() => openPlaceInMaps(place)} style={styles.cercaCTAButtonMap}>
+												<Text style={styles.cercaCTAButtonText}>Ver en Mapa</Text>
+											</TouchableOpacity>
+											<TouchableOpacity onPress={() => { setSelectedPlace(place); setDetailModalVisible(true); }} style={[styles.cercaCTAButtonDetails, { marginLeft: 4 }]}>
+												<Text style={styles.cercaCTAButtonTextAlt}>Detalles</Text>
+											</TouchableOpacity>
+										</View>
 									</View>
-								</View>
-							</View>
-							<View style={[styles.cercaCard, { width: 170 }]}> 
-								<Image source={promoIsla?.ImagenURL ? { uri: promoIsla.ImagenURL } : undefined} style={[styles.cercaImg, { width: 170, height: 100, backgroundColor:'#eceff1' }]} resizeMode="cover" />
-								<View style={[styles.cercaBadge, { backgroundColor: '#26c6da' }]}><Text style={styles.cercaBadgeText}>Isla</Text></View>
-								<View style={styles.cercaRating}><MaterialCommunityIcons name="star" size={15} color="#FFD700" /><Text style={styles.cercaRatingText}>4.9</Text></View>
-								<View style={{ padding: 12 }}>
-									<Text style={styles.cercaTitle}>Isla de Ometepe</Text>
-									<View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
-										<Text style={styles.cercaLoc}>Rivas</Text>
-										<Text style={[styles.cercaLoc, { marginLeft: 12 }]}>2-3 días</Text>
-									</View>
-								</View>
-							</View>
+								);
+							})}
 						</View>
 					</View>
+
+					{/* Details modal for nearby places */}
+					<Modal visible={detailModalVisible} animationType="slide" transparent={true} onRequestClose={() => setDetailModalVisible(false)}>
+						<View style={{ flex:1, backgroundColor:'rgba(0,0,0,0.5)', justifyContent:'flex-end' }}>
+							<View style={{ backgroundColor:'#fff', borderTopLeftRadius:12, borderTopRightRadius:12, padding:16, maxHeight: '70%' }}>
+								<View style={styles.modalHeaderRow}>
+									<TouchableOpacity onPress={() => setDetailModalVisible(false)} style={{ padding:6 }}>
+										<Text style={{ color:'#1976d2', fontWeight:'700' }}>Cerrar</Text>
+									</TouchableOpacity>
+								</View>
+								{selectedPlace ? (
+									<ScrollView contentContainerStyle={{ paddingBottom: 12 }}>
+										{selectedPlace.ImagenURL ? (
+											<Image source={{ uri: selectedPlace.ImagenURL }} style={styles.modalImage} resizeMode='cover' />
+										) : null}
+										<View style={styles.modalTitleRow}>
+											<Text style={styles.modalTitle}>{selectedPlace.Nombre}</Text>
+											{selectedPlace.Categoria ? <View style={styles.modalBadge}><Text style={styles.modalBadgeText}>{selectedPlace.Categoria}</Text></View> : null}
+										</View>
+										{selectedPlace.Descripcion ? <Text style={styles.modalDesc}>{selectedPlace.Descripcion}</Text> : null}
+										{selectedPlace.Horarios ? (
+											<View style={styles.modalSection}>
+												<Text style={styles.modalSectionTitle}>Horarios</Text>
+												<Text style={styles.modalSectionValue}>{selectedPlace.Horarios.Apertura} — {selectedPlace.Horarios.Cierre}</Text>
+											</View>
+										) : null}
+										{Array.isArray(selectedPlace.Servicios) && selectedPlace.Servicios.length > 0 ? (
+											<View style={styles.modalSection}>
+												<Text style={styles.modalSectionTitle}>Servicios</Text>
+												<View style={styles.modalChipsRow}>
+													{selectedPlace.Servicios.map((s, idx) => (
+														<View key={idx} style={styles.modalChip}><Text style={styles.modalChipText}>{s}</Text></View>
+													))}
+												</View>
+											</View>
+										) : null}
+										{/* Ubicación removida por solicitud del usuario */}
+										<View style={styles.modalActionsRow}>
+											<TouchableOpacity onPress={() => openPlaceInMaps(selectedPlace)} style={styles.cercaCTAButtonMap}>
+												<Text style={styles.cercaCTAButtonText}>Ver en Mapa</Text>
+											</TouchableOpacity>
+											<TouchableOpacity onPress={() => setDetailModalVisible(false)} style={[styles.cercaCTAButtonDetails, { marginLeft: 8 }]}>
+												<Text style={styles.cercaCTAButtonTextAlt}>Cerrar</Text>
+											</TouchableOpacity>
+										</View>
+									</ScrollView>
+								) : (
+									<Text style={{ padding: 12 }}>No hay datos</Text>
+								)}
+							</View>
+						</View>
+					</Modal>
 				</ScrollView>
 			)}
 		</View>
@@ -819,6 +987,102 @@ const styles = StyleSheet.create({
 		fontSize: 14,
 		fontFamily: 'Montserrat-Medium',
 	},
+	// details modal styles
+	modalHeaderRow: {
+		flexDirection: 'row',
+		justifyContent: 'flex-end',
+		paddingBottom: 8,
+	},
+	modalImage: {
+		width: '100%',
+		height: 160,
+		borderRadius: 8,
+		marginBottom: 12,
+	},
+	modalTitleRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'space-between',
+		marginBottom: 8,
+	},
+	modalTitle: {
+		fontSize: 18,
+		fontWeight: '700',
+		flex: 1,
+		marginRight: 8,
+	},
+	modalBadge: {
+		backgroundColor: '#26c6da',
+		paddingHorizontal: 8,
+		paddingVertical: 4,
+		borderRadius: 8,
+	},
+	modalBadgeText: {
+		color: '#fff',
+		fontWeight: '700',
+		fontSize: 12,
+	},
+	modalDesc: {
+		color: '#444',
+		marginBottom: 8,
+	},
+	modalSection: {
+		marginBottom: 10,
+	},
+	modalSectionTitle: {
+		fontWeight: '700',
+		marginBottom: 4,
+	},
+	modalSectionValue: {
+		color: '#666',
+		lineHeight: 18,
+	},
+	modalChipsRow: {
+		flexDirection: 'row',
+		flexWrap: 'wrap',
+		gap: 8,
+	},
+	modalChip: {
+		backgroundColor: '#f1f8e9',
+		paddingHorizontal: 8,
+		paddingVertical: 6,
+		borderRadius: 12,
+		marginRight: 6,
+		marginBottom: 6,
+	},
+	modalChipText: {
+		color: '#33691e',
+		fontSize: 12,
+	},
+	modalActionsRow: {
+		flexDirection: 'row',
+		justifyContent: 'flex-start',
+		paddingTop: 6,
+	},
+	cercaCTAButtonMap: {
+		paddingVertical: 5,
+		paddingHorizontal: 10,
+		borderRadius: 6,
+		borderWidth: 1,
+		borderColor: '#1976d2',
+		backgroundColor: '#fff',
+	},
+	cercaCTAButtonDetails: {
+		paddingVertical: 5,
+		paddingHorizontal: 10,
+		borderRadius: 6,
+		backgroundColor: '#FFD400',
+	},
+	cercaCTAButtonText: {
+		color: '#1976d2',
+		fontWeight: '700',
+		fontSize: 11,
+	},
+	cercaCTAButtonTextAlt: {
+		color: '#111',
+		fontWeight: '700',
+		fontSize: 11,
+	},
 	loaderMini: {
 		position: 'absolute',
 		top: 0,
@@ -829,10 +1093,6 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 		backgroundColor: 'rgba(255,255,255,0.25)',
 	},
-	
-	
-	
-	
 		headerFixed: {
 			position: 'absolute',
 			top: 0,

@@ -1,7 +1,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Linking, Share, Alert } from 'react-native';
-import { useSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const MOCK = {
@@ -28,7 +28,7 @@ const MOCK = {
 };
 
 export default function ExperienceDetail(){
-    const params = useSearchParams();
+    const params = useLocalSearchParams();
     const router = useRouter();
     const id = params.id || '';
     const [saved, setSaved] = useState(false);

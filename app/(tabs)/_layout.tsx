@@ -1,10 +1,13 @@
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+
+import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import CalendarScreen from '../screens/calendar/calendar';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+
 import Home from '../screens/home/home';
 import MapScreen from '../screens/map/map';
-import ProfileStack from '../screens/profile';
+import CalendarScreen from '../screens/calendar/calendar';
 import ReservationsScreen from '../screens/reservations/reservations';
+import ProfileStack from '../screens/profile';
 
 const Tab = createBottomTabNavigator();
 

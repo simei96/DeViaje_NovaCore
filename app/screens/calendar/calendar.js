@@ -16,6 +16,7 @@ export default function CalendarScreen() {
 		const [selectedFilter, setSelectedFilter] = useState('Todos');
 		const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 		const [eventos, setEventos] = useState([]);
+		const [error, setError] = useState(null);
 		const [loading, setLoading] = useState(true);
 		const [verTodos, setVerTodos] = useState(false);
 
@@ -82,45 +83,93 @@ export default function CalendarScreen() {
 			return String(fecha);
 		}
 
+// Normalize labels for comparison: remove diacritics, lowercase and trim
+function normalizeLabel(s) {
+	if (!s) return '';
+	try {
+		return s.toString().normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
+	} catch (e) {
+		// fallback if unicode property escapes not supported
+		return s.toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+	}
+}
+
 		const markedDates = {};
-		eventos.forEach(ev => {
-			let fecha = ev.fechaInicio;
-			let d = null;
-			if (typeof fecha === 'object' && fecha.seconds) {
-				d = new Date(fecha.seconds * 1000);
-			} else if (typeof fecha === 'string') {
-				d = parseFecha(fecha);
+		// helper: add date key to markedDates with color
+		function markDateKey(key, color) {
+			if (!markedDates[key]) markedDates[key] = { marked: true, dotColor: color };
+			else if (!markedDates[key].dotColor) markedDates[key].dotColor = color;
+			// keep selected styling if matches
+			if (key === selectedDate) {
+				markedDates[key].selected = true;
+				markedDates[key].selectedColor = color;
 			}
-			if (d) {
-				const key = d.toISOString().split('T')[0];
-				let color = '#0072BC';
-				if (ev.tipo === 'Gastronómico') color = '#43B02A';
-				if (ev.tipo === 'Religioso') color = '#8e44ad';
-				markedDates[key] = {
-					marked: true,
-					dotColor: color,
-					selected: key === selectedDate,
-					selectedColor: key === selectedDate ? color : undefined,
-				};
+		}
+
+		// Build marks from events, applying the selectedFilter
+		eventos.forEach(ev => {
+			if (selectedFilter && selectedFilter !== 'Todos' && normalizeLabel(ev.tipo) !== normalizeLabel(selectedFilter)) return;
+			let start = ev.fechaInicio;
+			let end = ev.fechaFin || ev.fechaInicio;
+			let dStart = null;
+			let dEnd = null;
+			if (typeof start === 'object' && start && start.seconds) dStart = new Date(start.seconds * 1000);
+			else if (typeof start === 'string') dStart = parseFecha(start);
+			if (typeof end === 'object' && end && end.seconds) dEnd = new Date(end.seconds * 1000);
+			else if (typeof end === 'string') dEnd = parseFecha(end);
+			const color = ev.tipo === 'Gastronómico' ? '#43B02A' : ev.tipo === 'Religioso' ? '#8e44ad' : '#0072BC';
+			if (dStart && dEnd) {
+				// ensure dStart <= dEnd
+				if (dEnd < dStart) { const tmp = dStart; dStart = dEnd; dEnd = tmp; }
+				const cur = new Date(dStart.getFullYear(), dStart.getMonth(), dStart.getDate());
+				while (cur <= dEnd) {
+					const key = cur.toISOString().split('T')[0];
+					markDateKey(key, color);
+					cur.setDate(cur.getDate() + 1);
+				}
+			} else if (dStart) {
+				const key = dStart.toISOString().split('T')[0];
+				markDateKey(key, color);
 			}
 		});
+
+		// ensure selectedDate is present
+		if (!markedDates[selectedDate]) {
+			markedDates[selectedDate] = { selected: true, selectedColor: '#222' };
+		} else if (!markedDates[selectedDate].selected) {
+			markedDates[selectedDate].selected = true;
+			markedDates[selectedDate].selectedColor = markedDates[selectedDate].dotColor || '#222';
+		}
 		if (!markedDates[selectedDate]) {
 			markedDates[selectedDate] = { selected: true, selectedColor: '#222' };
 		}
 
-		const eventosFiltrados = verTodos
-			? eventos
-			: eventos.filter(ev => {
-				let fecha = ev.fechaInicio;
-				let d = null;
-				if (typeof fecha === 'object' && fecha.seconds) {
-					d = new Date(fecha.seconds * 1000);
-				} else if (typeof fecha === 'string') {
-					d = parseFecha(fecha);
-				}
-				if (!d) return false;
-				return d.toISOString().split('T')[0] === selectedDate;
-			});
+		// Helper: convert a fecha value to a Date (or null)
+		function toDateObj(fecha) {
+			if (!fecha) return null;
+			if (typeof fecha === 'object' && fecha.seconds) return new Date(fecha.seconds * 1000);
+			if (typeof fecha === 'string') return parseFecha(fecha);
+			if (fecha instanceof Date) return fecha;
+			return null;
+		}
+
+		function dateKey(d) { return d.toISOString().split('T')[0]; }
+
+		const eventosFiltrados = eventos.filter(ev => {
+			// category filter first
+			if (selectedFilter && selectedFilter !== 'Todos' && normalizeLabel(ev.tipo) !== normalizeLabel(selectedFilter)) return false;
+
+			if (verTodos) return true;
+
+			const start = toDateObj(ev.fechaInicio);
+			const end = toDateObj(ev.fechaFin) || start;
+			if (!start) return false;
+
+			const kStart = dateKey(new Date(start.getFullYear(), start.getMonth(), start.getDate()));
+			const kEnd = dateKey(new Date(end.getFullYear(), end.getMonth(), end.getDate()));
+			// selectedDate is already YYYY-MM-DD string; compare lexicographically
+			return selectedDate >= kStart && selectedDate <= kEnd;
+		});
 
 		return (
 			<View style={styles.container}>
